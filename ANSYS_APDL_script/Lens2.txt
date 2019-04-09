@@ -1,0 +1,110 @@
+/prep7
+
+Rad1=100e-3		! Radio de curvatura primera superficie
+Rad2=-150e-3		! Radio de curvatura segunda superficie
+dLens=4e-3			! Espesor central de la lente
+Aper=12.5e-3		! Radio de apertura de la lente
+
+CenterPos1=dLens/2-Rad1
+CenterPos2=-dLens/2-Rad2
+
+EdgeP1=CenterPos1-SIGN(SQRT(Rad1**2-Aper**2),CenterPos1)
+EdgeP2=CenterPos2-SIGN(SQRT(Rad2**2-Aper**2),CenterPos2)
+EdgeP12=CenterPos1-SIGN(SQRT(Rad1**2-(Aper/2)**2),CenterPos1)
+EdgeP22=CenterPos2-SIGN(SQRT(Rad2**2-(Aper/2)**2),CenterPos2)
+
+k,,0,0,dLens/2
+k,,0,Aper,EdgeP1
+k,,0,Aper/2,EdgeP12
+k,,0,0,-dLens/2
+k,,0,Aper,EdgeP2
+k,,0,Aper/2,EdgeP22
+
+
+! Visualizacion
+/VIEW,1,1   
+/ANG,1  
+/REP,FAST  
+
+LARC,1,2,3
+LARC,4,5,6
+L,1,4
+L,2,5
+
+! Define divisiones en la lente para le mallado
+
+LESIZE,1, , ,20, , , , ,1 						! 40
+LESIZE,2, , ,20, , , , ,1 						! 40
+LESIZE,3, , ,6, , , , ,1 						! 8
+LESIZE,4, , ,6, , , , ,1 						! 8
+
+AL,1,2,3,4
+VROTAT,1,,,,,,1,4,360,6, 
+
+
+E_x = 82e9        	!modulo de elasticidad inventado
+Nu_xy = 0.206		!modulo de poisson inventado
+Alfa = 8.3e-6		!CET inventado
+K_xx = 0.858		!Coef de conduct termica inventado
+T_ref = 293		!Temperatura de referencia  inventado
+
+MPTEMP,,,,,,,,  	!Propiedades de material
+MPTEMP,1,0  	!Inicializa tabla de propiedades del material 
+MPDATA,EX,1,,E_x		! Introduce parametro
+MPDATA,PRXY,1,,Nu_xy
+UIMP,1,REFT,,,T_ref	! Introduce parametro de referencia
+MPDATA,ALPX,1,,Alfa 
+MPDATA,KXX,1,,K_xx  
+
+ET,1,SOLID185
+
+! Mesh
+
+MSHAPE,0,3D 
+MSHKEY,1
+FLST,5,6,6,ORDE,2   
+FITEM,5,1   
+FITEM,5,-6  
+CM,_Y,VOLU  
+VSEL, , , ,P51X 
+CM,_Y1,VOLU 
+CHKMSH,'VOLU'   
+CMSEL,S,_Y  
+VMESH,_Y1   
+CMDELE,_Y   
+CMDELE,_Y1  
+CMDELE,_Y2  
+
+CSYS,1  
+
+Angt=5
+
+nsel,s,loc,x,Aper,Aper  
+nsel,r,loc,y,90-Angt,90+Angt
+nsel,r,loc,z,0-1e-3,0+1e-3
+!F,ALL,FY,-5
+!SF,ALL,PRES,-10
+D,ALL, ,-1e-3, , , ,UY, , , , ,
+
+nsel,s,loc,x,Aper,Aper  
+nsel,r,loc,y,210-Angt,210+Angt
+nsel,r,loc,z,0-1e-3,0+1e-3
+D,ALL, ,0, , , ,ALL, , , , ,   
+
+nsel,s,loc,x,Aper,Aper  
+nsel,r,loc,y,330-Angt,330+Angt
+nsel,r,loc,z,0-1e-3,0+1e-3
+D,ALL, ,0, , , ,ALL, , , , ,   
+
+CSYS,0 
+
+allsel
+
+/SOL
+/STATUS,SOLU
+SOLVE   
+
+
+
+
+
