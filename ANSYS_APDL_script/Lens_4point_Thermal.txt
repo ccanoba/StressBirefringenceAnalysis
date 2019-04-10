@@ -56,7 +56,7 @@ UIMP,1,REFT,,,T_ref	! Introduce parametro de referencia
 MPDATA,ALPX,1,,Alfa 
 MPDATA,KXX,1,,K_xx  
 
-ET,1,SOLID185
+ET,1,SOLID70
 
 ! Mesh
 
@@ -75,24 +75,46 @@ CMDELE,_Y
 CMDELE,_Y1  
 CMDELE,_Y2  
 
+! Thermal load
+
+ASEL,S,AREA,,2,22,4
+DA,ALL,TEMP,310
+ALLSEL
+
+ASEL,S,AREA,,4,24,4
+SFA,ALL,1,CONV,10,293  
+ALLSEL
+
+/SOL
+SOLVE
+
+/PREP7  
+ETCHG,TTS 
+LDREAD,TEMP,,, , ,'test','rth',' ' 
+
+! Define loads
+
 CSYS,1  
 
 Angt=5
 
 nsel,s,loc,x,Aper,Aper  
-nsel,r,loc,y,90-Angt,90+Angt
-nsel,r,loc,z,0-1e-3,0+1e-3
-!F,ALL,FY,-5
-!SF,ALL,PRES,-10
-D,ALL, ,-1e-3, , , ,UY, , , , ,
-
-nsel,s,loc,x,Aper,Aper  
-nsel,r,loc,y,210-Angt,210+Angt
+nsel,r,loc,y,0-Angt,0+Angt
 nsel,r,loc,z,0-1e-3,0+1e-3
 D,ALL, ,0, , , ,ALL, , , , ,   
 
 nsel,s,loc,x,Aper,Aper  
-nsel,r,loc,y,330-Angt,330+Angt
+nsel,r,loc,y,90-Angt,90+Angt
+nsel,r,loc,z,0-1e-3,0+1e-3
+D,ALL, ,0, , , ,ALL, , , , ,   
+
+nsel,s,loc,x,Aper,Aper  
+nsel,r,loc,y,180-Angt,180+Angt
+nsel,r,loc,z,0-1e-3,0+1e-3
+D,ALL, ,0, , , ,ALL, , , , ,   
+
+nsel,s,loc,x,Aper,Aper  
+nsel,r,loc,y,270-Angt,270+Angt
 nsel,r,loc,z,0-1e-3,0+1e-3
 D,ALL, ,0, , , ,ALL, , , , ,   
 
@@ -102,9 +124,4 @@ allsel
 
 /SOL
 /STATUS,SOLU
-SOLVE   
-
-
-
-
-
+SOLVE
