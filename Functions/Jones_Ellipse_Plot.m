@@ -33,6 +33,6 @@ end
 h(lt)=plot((yellip*ellipsize)+px(l),(xellip*ellipsize)+py(l),EColor,'LineWidth', 2);
 
 end
-
+axis image
 line2arrow(h,'HeadLength',arrowsize,'HeadWidth',arrowsize)
 end

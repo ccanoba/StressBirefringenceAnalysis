@@ -14,7 +14,7 @@ addpath('../Functions')
 StressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
                                         'lensConv4.txt','lensConvPress.txt'};
 
-Data=load(StressesDataFileName{8});
+Data=load(StressesDataFileName{1});
 
 verbosity = 1;
 
@@ -30,13 +30,7 @@ lambda = 532e-9;                                                    % Light wave
 n0 = 1.5;                                               % refractive index without load
 solMethod = 2;                                      % Method for solution. 1 numerical, 2 graphical.
 
-% Lens example
-illumParam = sourceDefinition(2, 12e-3, 15, 36, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);                             % 1,2
-
-%Square example
-% illumParam = sourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);                  % 3,5
-
-% illumParam = sourceDefinition(4, 12e-3, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);       % 4,6
+illumParam = sourceDefinition(3, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
 
 %% Discretize nodes in the model into layers
 
@@ -179,52 +173,11 @@ for l = 1: length(k)
     end
     JonesMatrix{l} = Jm;
 end
-%%
 
-OPL = zeros(1,length(k));
-WF = cell(2,length(Layer)); 
-for c=1:length(Layer)
-    for l = 1: length(k)
-        n1 = nBeam{c,l}(1);
-        n2 = nBeam{c,l}(2);
-        if c==1
-            n1=1; n2=1;
-        end
-        OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
-    end
-    if c==1
-        WF{1,c} = OPL;
-    else
-        WF{1,c} = OPL;
-    end
-    if c==1
-    WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c},xs,ys);
-    else
-        WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c}+WF{1,c-1},xs,ys);
-    end
-end
 %% Plot polarization map
 
-% if verbosity == 1
-%     In = [1 0]';
-%     shift = [0 0];
-%     Efactor = 1;
-%     OutLayer = length(Layer) ;
-%     l = 250;
-%     chiThreshold = pi/125;
-%     ellipsize = 5;
-%     arrowsize = 5;
-%     stepplot = 1:5:51;
-%     stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
-%     PosFactor = 5000;
-%     NumF = 26;
-%     
-%     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
-%     hold off
-% end
-
 if verbosity == 1
-    In = [1 0]'; In=In/norm(In);
+    In = [1 0]';
     shift = [0 0];
     Efactor = 1;
     OutLayer = length(Layer) ;
@@ -232,13 +185,10 @@ if verbosity == 1
     chiThreshold = pi/125;
     ellipsize = 5;
     arrowsize = 5;
-%     stepplot = 1:5:51;
-%     stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
-%     stepplot = 1:3:36;
-%     stepplot = repmat(stepplot,1,15)+36*repmat(0:14,1,length(stepplot));
-    stepplot = 1:1:length(k);
+    stepplot = 1:5:51;
+    stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
     PosFactor = 5000;
-    NumF = 28;
+    NumF = 26;
     
     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
     hold off
@@ -246,17 +196,17 @@ end
 
 if verbosity == 1
     birefringenceMap = birefringence{1};
-    birefringenceMap = griddata(beamLoc{1}(:,1),beamLoc{1}(:,2),birefringenceMap,xs,ys);
+    birefringenceMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),birefringenceMap,xs,ys);
     figure,imagesc(birefringenceMap),colorbar, colormap jet
     birefringenceMap = birefringence{length(Layer)};
-    birefringenceMap = griddata(beamLoc{length(Layer)}(:,1),beamLoc{length(Layer)}(:,2),birefringenceMap,xs,ys);
+    birefringenceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),birefringenceMap,xs,ys);
     figure,imagesc(birefringenceMap),colorbar, colormap jet
     axesRotMap = axesRot{1};
-    axesRotMap = griddata(beamLoc{1}(:,1),beamLoc{1}(:,2),axesRotMap,xs,ys);
+    axesRotMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),axesRotMap,xs,ys);
     figure,imagesc(axesRotMap),colorbar, colormap jet
     axesRotMap = axesRot{length(Layer)};
-    axesRotMap = griddata(beamLoc{length(Layer)}(:,1),beamLoc{length(Layer)}(:,2),axesRotMap,xs,ys);
+    axesRotMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),axesRotMap,xs,ys);
     figure,imagesc(axesRotMap),colorbar, colormap jet
 end
 
-save('../Output/mainOutput','beamLoc','JonesMatrix','birefringence','axesRot')
+save('../Output/demo1Output','beamLoc','JonesMatrix','birefringence','axesRot')

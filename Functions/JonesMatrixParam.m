@@ -26,7 +26,6 @@ birefringence = dn1-dn2;
 
 D=GlobalDCoor;
 D=real(cell2mat(D));
-% D1=D(:,1:2:end);
 D2=D(:,2:2:end);
 
 [~,ke2] = BeamAxes(kL, [cosd(thetaref) sind(thetaref) 0]'); 

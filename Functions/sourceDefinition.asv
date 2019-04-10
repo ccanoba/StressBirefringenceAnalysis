@@ -13,8 +13,7 @@
 % Inputs:
 % 
 % For 1 and 2, (type of illumination, aperture radius, radial discretization, angular discretization, source location, Nodes limit coordinates)
-% For 3 and 5, (type of illumination, x size of aperture, y size of aperture, discretization in x, discretization in y, source location, Nodes limit coordinates)
-% For 4 and 6, (type of illumination, aperture radius, x size of discretization, y size of discretization, discretization in x, discretization in y, source location, Nodes limit coordinates)
+% For 1 and 2, (type of illumination, aperture radius, radial discretization, angular discretization, source location, Nodes limit coordinates)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

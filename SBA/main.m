@@ -6,19 +6,15 @@
 % the prediction of changes in the birefringence of a component from 
 % previous knowledge of the stress distribution it presents.
 % 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% How to run
-
-% Add paths with examples and the functions this script employs
-
-% If linux or windows
 addpath('../Samples')
 addpath('../Functions')
 
-StressesDataFileName = {'Press_430kPa_z10.txt', 'NewModel2.txt', 'SqWindow4.txt'...
-                                        'BK7_Test3_300_2.txt', 'Data1.txt', 'Lens1.txt', 'Lens2.txt','lensConv.txt','lensConv4.txt','lensConvPress.txt'};
+StressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
+                                        'lensConv4.txt','lensConvPress.txt'};
 
-Data=load(StressesDataFileName{3});
+Data=load(StressesDataFileName{1});
 
 verbosity = 1;
 
@@ -26,19 +22,13 @@ verbosity = 1;
 
 xu = Data(:,2); yu = Data(:,3); zu = Data(:,4);                                              % Undeformed nodes coordinates definition
 x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
-
-% x = Data(:,2);
-% y = Data(:,3);
-% z = Data(:,4);
-
-% Param = struct('RI',12e-3, 'NRI',15,'NTI',36,'P0',[0 0 -200e-3], 'Poslim', [min(x), max(x), min(y), max(y), min(z), max(z)],...
-%                 'xside', 24e-3,'yside', 24e-3,'Nx', 50, 'Ny', 50);
-% illumCase = 5;    % Casos 1,3,5        
-            
-            
-% Param = struct('RI',12e-3, 'NRI',15,'NTI',36,'P0',[0 0 -200e-3], 'Poslim', [min(x), max(x), min(y), max(y), min(z), max(z)],...
-%                 'xside', 49e-3,'yside', 49e-3,'Nx', 50, 'Ny', 50);
-% illumCase = 8;     % Casos 2, 4
+thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
+k11 = -0.5e-12;                                                         % Stress optical coeficient 1
+k12 = -3.3e-12;                                                         % Stress optical coeficient 1
+OSC = [k11, k12];
+lambda = 532e-9;                                                    % Light wavelenght
+n0 = 1.5;                                               % refractive index without load
+solMethod = 2;                                      % Method for solution. 1 numerical, 2 graphical.
 
 % Lens example
 % illumParam = sourceDefinition(2, 12e-3, 15, 36, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);                             % 1,2
@@ -123,15 +113,8 @@ end
 
 % clear zs
 %% Ray tracing
-thetaref = 0;
-[ke1,ke2] = BeamAxes(k', [cosd(thetaref) sind(thetaref) 0]');         % Find polarization axes, based on a linear polarization reference. ke2 is the reference
-k11 = -0.5e-12;
-k12 = -3.3e-12;
-OSC = [k11, k12];
-lambda = 532e-9;
-n0 = 1.5;                                               % refractive index without load
-solMethod = 2;
 
+[ke1,ke2] = BeamAxes(k', [cosd(thetaref) sind(thetaref) 0]');         % Find polarization axes, based on a linear polarization reference. ke2 is the reference
 beamLocNode = zeros(size(k));                % beam location on node
 kRefracted = zeros(size(k))';                   % wave vector of refracted beams
 beamLoc = cell(1, length(Layer)+1);          % beam location coordinate
@@ -196,7 +179,26 @@ for l = 1: length(k)
     end
     JonesMatrix{l} = Jm;
 end
+%%
 
+OPL = zeros(1,length(k));
+WF = cell(2,length(Layer)); 
+for c=1:length(Layer)
+    for l = 1: length(k)
+        n1 = nBeam{c,l}(1);
+        n2 = nBeam{c,l}(2);
+        if c==1
+            n1=1; n2=1;
+        end
+        OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
+    end
+    if c==1
+        WF{1,c} = OPL;
+    else
+        WF{1,c} = WF{1,c-1}+OPL;
+    end
+    WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c},xs,ys);
+end
 %% Plot polarization map
 
 if verbosity == 1
@@ -237,3 +239,20 @@ end
 %     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
 %     hold off
 % end
+
+if verbosity == 1
+    birefringenceMap = birefringence{1};
+    birefringenceMap = griddata(beamLoc{1}(:,1),beamLoc{1}(:,2),birefringenceMap,xs,ys);
+    figure,imagesc(birefringenceMap),colorbar, colormap jet
+    birefringenceMap = birefringence{length(Layer)};
+    birefringenceMap = griddata(beamLoc{length(Layer)}(:,1),beamLoc{length(Layer)}(:,2),birefringenceMap,xs,ys);
+    figure,imagesc(birefringenceMap),colorbar, colormap jet
+    axesRotMap = axesRot{1};
+    axesRotMap = griddata(beamLoc{1}(:,1),beamLoc{1}(:,2),axesRotMap,xs,ys);
+    figure,imagesc(axesRotMap),colorbar, colormap jet
+    axesRotMap = axesRot{length(Layer)};
+    axesRotMap = griddata(beamLoc{length(Layer)}(:,1),beamLoc{length(Layer)}(:,2),axesRotMap,xs,ys);
+    figure,imagesc(axesRotMap),colorbar, colormap jet
+end
+
+save('../Output/mainOutput','beamLoc','JonesMatrix','birefringence','axesRot')
