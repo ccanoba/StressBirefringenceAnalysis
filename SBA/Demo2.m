@@ -14,7 +14,7 @@ addpath('../Functions')
 StressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
                                         'lensConv4.txt','lensConvPress.txt'};
 
-Data=load(StressesDataFileName{1});
+Data=load(StressesDataFileName{2});
 
 verbosity = 1;
 
@@ -30,7 +30,7 @@ lambda = 532e-9;                                                    % Light wave
 n0 = 1.5;                                               % refractive index without load
 solMethod = 2;                                      % Method for solution. 1 numerical, 2 graphical.
 
-illumParam = sourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
+illumParam = sourceDefinition(2, 12e-3, 15, 36, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
 
 %% Discretize nodes in the model into layers
 
@@ -196,7 +196,7 @@ end
 %% Plot polarization map
 
 if verbosity == 1
-    In = [1 0]';
+    In = [1 0]'; In=In/norm(In);
     shift = [0 0];
     Efactor = 1;
     OutLayer = length(Layer) ;
@@ -204,10 +204,9 @@ if verbosity == 1
     chiThreshold = pi/125;
     ellipsize = 5;
     arrowsize = 5;
-    stepplot = 1:5:51;
-    stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
+    stepplot = 1:1:length(k);
     PosFactor = 5000;
-    NumF = 26;
+    NumF = 28;
     
     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
     hold off

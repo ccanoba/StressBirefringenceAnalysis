@@ -173,7 +173,26 @@ for l = 1: length(k)
     end
     JonesMatrix{l} = Jm;
 end
+%% Wave front calculation
 
+OPL = zeros(1,length(k));
+WF = cell(2,length(Layer)); 
+for c=1:length(Layer)
+    for l = 1: length(k)
+        n1 = nBeam{c,l}(1);
+        n2 = nBeam{c,l}(2);
+        if c==1
+            n1=1; n2=1;
+        end
+        OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
+    end
+    if c==1
+        WF{1,c} = OPL;
+    else
+        WF{1,c} = WF{1,c-1}+OPL;
+    end
+    WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c},xs,ys);
+end
 %% Plot polarization map
 
 if verbosity == 1
@@ -192,20 +211,27 @@ if verbosity == 1
     
     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
     hold off
+    title('Polarization ')
 end
 
 if verbosity == 1
     birefringenceMap = birefringence{1};
-    birefringenceMap = griddata(beamLoc{1}(:,1),beamLoc{1}(:,2),birefringenceMap,xs,ys);
+    birefringenceMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),birefringenceMap,xs,ys);
     figure,imagesc(birefringenceMap),colorbar, colormap jet
     birefringenceMap = birefringence{length(Layer)};
-    birefringenceMap = griddata(beamLoc{length(Layer)}(:,1),beamLoc{length(Layer)}(:,2),birefringenceMap,xs,ys);
+    birefringenceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),birefringenceMap,xs,ys);
     figure,imagesc(birefringenceMap),colorbar, colormap jet
     axesRotMap = axesRot{1};
-    axesRotMap = griddata(beamLoc{1}(:,1),beamLoc{1}(:,2),axesRotMap,xs,ys);
+    axesRotMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),axesRotMap,xs,ys);
     figure,imagesc(axesRotMap),colorbar, colormap jet
     axesRotMap = axesRot{length(Layer)};
-    axesRotMap = griddata(beamLoc{length(Layer)}(:,1),beamLoc{length(Layer)}(:,2),axesRotMap,xs,ys);
+    axesRotMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),axesRotMap,xs,ys);
     figure,imagesc(axesRotMap),colorbar, colormap jet
 end
 
+if verbosity == 1
+    figure,imagesc(WF{2,1})
+    figure,imagesc(WF{2,end})
+end
+
+save('../Output/demo1Output','beamLoc','JonesMatrix','birefringence','axesRot')
