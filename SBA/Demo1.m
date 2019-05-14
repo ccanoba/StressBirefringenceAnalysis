@@ -175,15 +175,34 @@ for l = 1: length(k)
 end
 %% Wave front calculation
 
+% OPL = zeros(1,length(k));
+% WF = cell(2,length(Layer)); 
+% for c=1:length(Layer)
+%     for l = 1: length(k)
+%         n1 = ((nBeam{c-1,l}(1)+nBeam{c,l}(1))/2);
+%         n2 = ((nBeam{c-1,l}(2)+nBeam{c,l}(2))/2);
+%         if c==1
+%             n1=1; n2=1;
+%         end
+%         OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
+%     end
+%     if c==1
+%         WF{1,c} = OPL;
+%     else
+%         WF{1,c} = WF{1,c-1}+OPL;
+%     end
+%     WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c},xs,ys);
+% end
+
+%% Wave front error calculation
+
 OPL = zeros(1,length(k));
-WF = cell(2,length(Layer)); 
-for c=1:length(Layer)
+WF = cell(2,length(Layer)-1); 
+for c=1:length(Layer)-1
     for l = 1: length(k)
-        n1 = nBeam{c,l}(1);
-        n2 = nBeam{c,l}(2);
-        if c==1
-            n1=1; n2=1;
-        end
+        BirL = (birefringence{c}(l)+birefringence{c+1}(l))/2;
+        n1 = ((nBeam{c,l}(1)+nBeam{c+1,l}(1))/2)-n0;
+        n2 = ((nBeam{c,l}(2)+nBeam{c+1,l}(2))/2)-n0;
         OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
     end
     if c==1
@@ -193,27 +212,30 @@ for c=1:length(Layer)
     end
     WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c},xs,ys);
 end
+
 %% Plot polarization map
 
 if verbosity == 1
-    In = [1 0]';
+    Intheta = 45;
+    In = [cosd(Intheta) 1i*sind(Intheta)]'; In=In/norm(In);
     shift = [0 0];
     Efactor = 1;
     OutLayer = length(Layer) ;
     l = 250;
-    chiThreshold = pi/125;
+    chiThreshold = pi/(2^7);
     ellipsize = 5;
     arrowsize = 5;
     stepplot = 1:5:51;
     stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
     PosFactor = 5000;
-    NumF = 26;
+    NumF = 24;
     
     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
     hold off
     title('Polarization map')
 end
 
+%%
 if verbosity == 1
     birefringenceMap = birefringence{1};
     birefringenceMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),birefringenceMap,xs,ys);
