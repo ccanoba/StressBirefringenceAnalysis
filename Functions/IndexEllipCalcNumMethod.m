@@ -17,6 +17,7 @@
 
 function [Nbeam, NbeamDir] = IndexEllipCalcNumMethod(nx,ny,nz,S)
 
+S = S/norm(S);
 ux = S(1).^2;
 uy = S(2).^2;
 uz = S(3).^2;
@@ -28,8 +29,8 @@ A = ex*ux+ey*uy+ez*uz;
 B = ux*ex*(ey+ez)+uy*ey*(ex+ez)+uz*ez*(ex+ey);
 C = ex*ey*ez;
 
-N1E = B/(2*A)+sqrt(B^2-4*A*C)/(2*A);
-N2E = B/(2*A)-sqrt(B^2-4*A*C)/(2*A);
+N1E = real(B/(2*A)+sqrt(B^2-4*A*C)/(2*A));
+N2E = real(B/(2*A)-sqrt(B^2-4*A*C)/(2*A));
 
 Nbeam = [sqrt(N1E), sqrt(N2E)];
 [Nbeam, orderN] = sort(Nbeam);
@@ -65,5 +66,9 @@ if NbeamDir(1, maxvx)<0
 end
 if NbeamDir(2, maxvy)<0
     NbeamDir(:,maxvy)=NbeamDir(:,maxvy)*-1;
+end
+if mean(isnan(NbeamDir(:)))~=0 || (ex==ey && ex==ez)% birefringence is zero
+    Nbeam = [nx, ny];
+    NbeamDir = [[1 0 0]', [0 1 0]'];
 end
 end

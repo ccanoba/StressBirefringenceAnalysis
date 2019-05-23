@@ -18,7 +18,8 @@ if chi<chiThreshold
 else
     chishiftV=chishift;
 end
-[~, xellip, yellip]=PlotEllip(psi+psishift,(chi+(chishiftV)*sign(chi)).*Efactor,0);
+% [~, xellip, yellip]=PlotEllip(psi+psishift,(chi+(chishiftV)*sign(chi)).*Efactor,0);
+[~, xellip, yellip]=PlotEllip(psi*psishift,(chi+(chishiftV)*sign(chi)).*Efactor,0);
 figure(Fnum), hold on,
 
 if chi>chiThreshold

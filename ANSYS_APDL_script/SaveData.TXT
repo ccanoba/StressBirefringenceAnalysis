@@ -1,5 +1,5 @@
 /post1
-*CFOPEN,NewModel2,txt						
+*CFOPEN,Lens25,txt						
 csys,4
 rsys,4
 dsys,4

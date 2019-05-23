@@ -136,19 +136,19 @@ for c = 1:length(Layer)                                        % iteration per l
     end
 for l = 1: length(k)                                               % iteration per ray
     [beamLocNode(l,:)] =RayPos(x(Layer{c}), y(Layer{c}), z(Layer{c}), beamLoc{c}(l,:), kBeam{c}(:,l));
-    [~,CP2B] = sort(sum(abs([xs(:), ys(:)]-beamLocNode(l,1:2)),2)); % CP2B : Closest Point to Beam
+    [~,CP2B] = sort(sqrt(sum(([xs(:), ys(:)]-beamLocNode(l,1:2)).^2,2))); % CP2B : Closest Point to Beam
     Normal2P = Normal{c}(:,CP2B(1));
     [dn(:,l), StressVD] = StressBir (Strains, beamLocNode(l,1:2), xs(CP2B(1:4)), ys(CP2B(1:4)), CP2B(1:4), OSC, n0);
 %     StressVDtmp{l}=StressVD(4:12);
     if c==1
         ni = 1;
-        nt = n0+mean(dn(:,l));
+        nt = mean(dn(:,l));
     elseif c==length(Layer)
-        ni = n0+(mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+        ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
         nt = 1;
     else
-        ni = n0+(mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
-        nt = n0+mean(dn(:,l));
+        ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+        nt = mean(dn(:,l));
     end    
     [kRefracted(:,l)] = SnellCalc (kBeam{c}(:,l), Normal2P, ni, nt);   
     [beamEllipCoor{c,l}, Srot, Norder] = SetLocalCord(StressVD(4:6)',StressVD(7:9)',StressVD(10:12)', kRefracted(:,l), ke1(:,l), ke2(:,l));
@@ -216,19 +216,19 @@ end
 %% Plot polarization map
 
 if verbosity == 1
-    Intheta = 45;
-    In = [cosd(Intheta) 1i*sind(Intheta)]'; In=In/norm(In);
+    Intheta = 0;
+    In = [cosd(Intheta) sind(Intheta)]'; In=In/norm(In);
     shift = [0 0];
     Efactor = 1;
     OutLayer = length(Layer) ;
     l = 250;
-    chiThreshold = pi/(2^7);
+    chiThreshold = pi/(2^10);
     ellipsize = 5;
     arrowsize = 5;
     stepplot = 1:5:51;
     stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
     PosFactor = 5000;
-    NumF = 24;
+    NumF = 25;
     
     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
     hold off

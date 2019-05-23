@@ -12,7 +12,7 @@ addpath('../Samples')
 addpath('../Functions')
 
 StressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
-                                        'lensConv4.txt','lensConvPress.txt'};
+                                        'lensConv4.txt','lensConvPress.txt', 'Lens25.txt'};
 
 Data=load(StressesDataFileName{2});
 
@@ -24,11 +24,11 @@ xu = Data(:,2); yu = Data(:,3); zu = Data(:,4);                                 
 x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
 thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
 k11 = -0.5e-12;                                                         % Stress optical coeficient 1
-k12 = -3.3e-12;                                                         % Stress optical coeficient 1
+k12 = -0.5e-12;                                                         % Stress optical coeficient 1 3.3
 OSC = [k11, k12];
 lambda = 532e-9;                                                    % Light wavelenght
-n0 = 1.5;                                               % refractive index without load
-solMethod = 2;                                      % Method for solution. 1 numerical, 2 graphical.
+n0 = 5;                                               % refractive index without load
+solMethod = 1;                                      % Method for solution. 1 numerical, 2 graphical.
 
 illumParam = sourceDefinition(2, 12e-3, 15, 36, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
 
@@ -136,19 +136,19 @@ for c = 1:length(Layer)                                        % iteration per l
     end
 for l = 1: length(k)                                               % iteration per ray
     [beamLocNode(l,:)] =RayPos(x(Layer{c}), y(Layer{c}), z(Layer{c}), beamLoc{c}(l,:), kBeam{c}(:,l));
-    [~,CP2B] = sort(sum(abs([xs(:), ys(:)]-beamLocNode(l,1:2)),2)); % CP2B : Closest Point to Beam
+    [~,CP2B] = sort(sqrt(sum(([xs(:), ys(:)]-beamLocNode(l,1:2)).^2,2))); % CP2B : Closest Point to Beam
     Normal2P = Normal{c}(:,CP2B(1));
     [dn(:,l), StressVD] = StressBir (Strains, beamLocNode(l,1:2), xs(CP2B(1:4)), ys(CP2B(1:4)), CP2B(1:4), OSC, n0);
 %     StressVDtmp{l}=StressVD(4:12);
     if c==1
         ni = 1;
-        nt = n0+mean(dn(:,l));
+        nt = mean(dn(:,l));
     elseif c==length(Layer)
-        ni = n0+(mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+        ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
         nt = 1;
     else
-        ni = n0+(mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
-        nt = n0+mean(dn(:,l));
+        ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+        nt = mean(dn(:,l));
     end    
     [kRefracted(:,l)] = SnellCalc (kBeam{c}(:,l), Normal2P, ni, nt);   
     [beamEllipCoor{c,l}, Srot, Norder] = SetLocalCord(StressVD(4:6)',StressVD(7:9)',StressVD(10:12)', kRefracted(:,l), ke1(:,l), ke2(:,l));
@@ -173,6 +173,33 @@ for l = 1: length(k)
     end
     JonesMatrix{l} = Jm;
 end
+
+%% Diattenuation
+diattMatrix = cell (length(k),2);
+
+for c=[1, length(Layer)]
+    beamLocNode = beamLoc{c+1};
+    for l = 1: length(k)
+        [~,CP2B] = sort(sum(abs([xs(:), ys(:)]-beamLocNode(l,1:2)),2)); % CP2B : Closest Point to Beam
+        Normal2P = Normal{c}(:,CP2B(1));
+        if c==1
+            ni = 1;
+            nt = mean(dn(:,l));
+            [diattMatrix{l,1},tmp1(l),tmp2(l)] = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
+            
+        %borrar
+        JonesMatrix{l} = JonesMatrix{l}*diattMatrix{l,1};
+        elseif c==length(Layer)
+            ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+            nt = 1;
+            diattMatrix{l,2} = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
+            %borrar
+%             JonesMatrix{l} = diattMatrix{l,2}*JonesMatrix{l};
+        end
+    end
+end
+
+
 %% Wave front calculation
 
 % OPL = zeros(1,length(k));
@@ -217,12 +244,12 @@ end
 
 if verbosity == 1
     Intheta = 45;
-    In = [cosd(Intheta) sind(Intheta)]'; In=In/norm(In);
-    shift = [0 0];
+    In = [cosd(Intheta) 1i*sind(Intheta)]'; In=In/norm(In);
+    shift = [500 0];
     Efactor = 1;
     OutLayer = length(Layer) ;
     l = 250;
-    chiThreshold = pi/125;
+    chiThreshold = pi/(2^7);
     ellipsize = 5;
     arrowsize = 5;
     stepplot = 1:1:length(k);

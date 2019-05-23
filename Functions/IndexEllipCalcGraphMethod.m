@@ -34,7 +34,7 @@ pb = kb(nb,pa);
 
 % Find axes orientation
 RotAxes = find(real(pa)~=0 & real(pb)~=0);
-if isempty(RotAxes)
+if isempty(RotAxes) || length(RotAxes)>1
     RotAxes=4;
 end
 switch RotAxes

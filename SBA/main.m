@@ -142,19 +142,19 @@ for c = 1:length(Layer)                                        % iteration per l
     end
 for l = 1: length(k)                                               % iteration per ray
     [beamLocNode(l,:)] =RayPos(x(Layer{c}), y(Layer{c}), z(Layer{c}), beamLoc{c}(l,:), kBeam{c}(:,l));
-    [~,CP2B] = sort(sum(abs([xs(:), ys(:)]-beamLocNode(l,1:2)),2)); % CP2B : Closest Point to Beam
+    [~,CP2B] = sort(sqrt(sum(([xs(:), ys(:)]-beamLocNode(l,1:2)).^2,2))); % CP2B : Closest Point to Beam
     Normal2P = Normal{c}(:,CP2B(1));
     [dn(:,l), StressVD] = StressBir (Strains, beamLocNode(l,1:2), xs(CP2B(1:4)), ys(CP2B(1:4)), CP2B(1:4), OSC, n0);
 %     StressVDtmp{l}=StressVD(4:12);
     if c==1
         ni = 1;
-        nt = n0+mean(dn(:,l));
+        nt = mean(dn(:,l));
     elseif c==length(Layer)
-        ni = n0+(mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+        ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
         nt = 1;
     else
-        ni = n0+(mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
-        nt = n0+mean(dn(:,l));
+        ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+        nt = mean(dn(:,l));
     end    
     [kRefracted(:,l)] = SnellCalc (kBeam{c}(:,l), Normal2P, ni, nt);   
     [beamEllipCoor{c,l}, Srot, Norder] = SetLocalCord(StressVD(4:6)',StressVD(7:9)',StressVD(10:12)', kRefracted(:,l), ke1(:,l), ke2(:,l));
@@ -179,17 +179,36 @@ for l = 1: length(k)
     end
     JonesMatrix{l} = Jm;
 end
-%%
+%% Wave front calculation
+
+% OPL = zeros(1,length(k));
+% WF = cell(2,length(Layer)); 
+% for c=1:length(Layer)
+%     for l = 1: length(k)
+%         n1 = ((nBeam{c-1,l}(1)+nBeam{c,l}(1))/2);
+%         n2 = ((nBeam{c-1,l}(2)+nBeam{c,l}(2))/2);
+%         if c==1
+%             n1=1; n2=1;
+%         end
+%         OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
+%     end
+%     if c==1
+%         WF{1,c} = OPL;
+%     else
+%         WF{1,c} = WF{1,c-1}+OPL;
+%     end
+%     WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c},xs,ys);
+% end
+
+%% Wave front error calculation
 
 OPL = zeros(1,length(k));
-WF = cell(2,length(Layer)); 
-for c=1:length(Layer)
+WF = cell(2,length(Layer)-1); 
+for c=1:length(Layer)-1
     for l = 1: length(k)
-        n1 = nBeam{c,l}(1);
-        n2 = nBeam{c,l}(2);
-        if c==1
-            n1=1; n2=1;
-        end
+        BirL = (birefringence{c}(l)+birefringence{c+1}(l))/2;
+        n1 = ((nBeam{c,l}(1)+nBeam{c+1,l}(1))/2)-n0;
+        n2 = ((nBeam{c,l}(2)+nBeam{c+1,l}(2))/2)-n0;
         OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
     end
     if c==1
@@ -199,60 +218,69 @@ for c=1:length(Layer)
     end
     WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c},xs,ys);
 end
+
 %% Plot polarization map
 
+%Cartessian
 if verbosity == 1
-    In = [1 0]';
+    Intheta = 0;
+    In = [cosd(Intheta) sind(Intheta)]'; In=In/norm(In);
     shift = [0 0];
     Efactor = 1;
     OutLayer = length(Layer) ;
     l = 250;
-    chiThreshold = pi/125;
+    chiThreshold = pi/(2^10);
     ellipsize = 5;
     arrowsize = 5;
     stepplot = 1:5:51;
     stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
     PosFactor = 5000;
-    NumF = 26;
+    NumF = 25;
     
     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
     hold off
+    title('Polarization map')
 end
 
+% Polar
 % if verbosity == 1
-%     In = [1 0]'; In=In/norm(In);
+%     Intheta = 0;
+%     In = [cosd(Intheta) sind(Intheta)]'; In=In/norm(In);
 %     shift = [0 0];
 %     Efactor = 1;
 %     OutLayer = length(Layer) ;
 %     l = 250;
-%     chiThreshold = pi/125;
+%     chiThreshold = pi/(2^7);
 %     ellipsize = 5;
 %     arrowsize = 5;
-% %     stepplot = 1:5:51;
-% %     stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
-% %     stepplot = 1:3:36;
-% %     stepplot = repmat(stepplot,1,15)+36*repmat(0:14,1,length(stepplot));
-%     stepplot = 1:1:length(k);
+%     stepplot = 2:2:length(k);
 %     PosFactor = 5000;
-%     NumF = 28;
+%     NumF = 25;
 %     
 %     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
 %     hold off
+%     title('Polarization map')
 % end
-
+%%
 if verbosity == 1
     birefringenceMap = birefringence{1};
-    birefringenceMap = griddata(beamLoc{1}(:,1),beamLoc{1}(:,2),birefringenceMap,xs,ys);
-    figure,imagesc(birefringenceMap),colorbar, colormap jet
+    birefringenceMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),birefringenceMap,xs,ys);
+    figure,imagesc(birefringenceMap),colorbar, colormap jet, title('Front birefringence map'), colorbar
     birefringenceMap = birefringence{length(Layer)};
-    birefringenceMap = griddata(beamLoc{length(Layer)}(:,1),beamLoc{length(Layer)}(:,2),birefringenceMap,xs,ys);
-    figure,imagesc(birefringenceMap),colorbar, colormap jet
+    birefringenceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),birefringenceMap,xs,ys);
+    figure,imagesc(birefringenceMap),colorbar, colormap jet, title('Rear birefringence map'), colorbar
     axesRotMap = axesRot{1};
-    axesRotMap = griddata(beamLoc{1}(:,1),beamLoc{1}(:,2),axesRotMap,xs,ys);
-    figure,imagesc(axesRotMap),colorbar, colormap jet
+    axesRotMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),axesRotMap,xs,ys);
+    figure,imagesc(axesRotMap),colorbar, colormap jet, title('Front fast axis orientation map'), colorbar
     axesRotMap = axesRot{length(Layer)};
-    axesRotMap = griddata(beamLoc{length(Layer)}(:,1),beamLoc{length(Layer)}(:,2),axesRotMap,xs,ys);
-    figure,imagesc(axesRotMap),colorbar, colormap jet
+    axesRotMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),axesRotMap,xs,ys);
+    figure,imagesc(axesRotMap),colorbar, colormap jet, title('Rear fast axis orientation map'), colorbar
 end
 
-save('../Output/mainOutput','beamLoc','JonesMatrix','birefringence','axesRot')
+if verbosity == 1
+    figure,imagesc(WF{2,1}), title('Front wavefront'), colorbar
+    figure,imagesc(WF{2,end}), title('Rear wavefront'), colorbar
+end
+
+save('../Output/demo1Output','beamLoc','JonesMatrix','birefringence','axesRot')
+
