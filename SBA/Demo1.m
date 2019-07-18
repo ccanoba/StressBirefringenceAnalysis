@@ -9,26 +9,27 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 addpath('../Samples')
-addpath('../Functions')
+addpath(genpath('../Functions'))
 
 StressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
-                                        'lensConv4.txt','lensConvPress.txt'};
+                                        'lensConv4.txt','lensConvPress.txt','WindowExp.txt','WindowExpFS.txt'};
 
-Data=load(StressesDataFileName{1});
+Data=load(StressesDataFileName{6});
 
-verbosity = 1;
+verbosity = 0;
 
 %% Parameters definition
 
 xu = Data(:,2); yu = Data(:,3); zu = Data(:,4);                                              % Undeformed nodes coordinates definition
 x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
 thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
-k11 = -0.5e-12;                                                         % Stress optical coeficient 1
-k12 = -3.3e-12;                                                         % Stress optical coeficient 1
+k11 = -0.7e-12;                                                         % Stress optical coeficient 1
+k12 = -4.3e-12;                                                         % Stress optical coeficient 1
 OSC = [k11, k12];
 lambda = 532e-9;                                                    % Light wavelenght
 n0 = 1.5;                                               % refractive index without load
 solMethod = 2;                                      % Method for solution. 1 numerical, 2 graphical.
+considerDiattenuation = 1;
 
 illumParam = sourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
 
@@ -162,6 +163,7 @@ dnBeam{c+1} = dn;
 [birefringence{c}, axesRot{c}] = JonesMatrixParam(nBeam(c,:), globalDCoor(c,:), kBeam{c+1}, thetaref);
 end
 
+%%
 fprintf('Jones calculation\n')
 
 for l = 1: length(k)
@@ -173,6 +175,49 @@ for l = 1: length(k)
     end
     JonesMatrix{l} = Jm;
 end
+
+%% Retardance and effective orientation angle calculation
+JM = cell2mat(JonesMatrix);
+
+retardance = 2*acos(real(JM(1,1:2:end)));
+thetaEnd1 = imag(JM(2,1:2:end))./sin(retardance/2);
+thetaEnd2 = imag(JM(1,1:2:end))./sin(retardance/2);
+% ThetaEnd(abs(ThetaEnd)>1) = 1;
+thetaEnd =atan2d(thetaEnd1, -thetaEnd2)/2;
+retardanceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),retardance',xs,ys);
+thetaEndMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),thetaEnd,xs,ys);
+%% Diattenuation
+if considerDiattenuation == 1
+diattMatrix = cell (length(k),2);
+diattMag = zeros(length(k),2);
+diattAxis = zeros(length(k),2);
+
+for c=[1, length(Layer)]
+    beamLocNode = beamLoc{c+1};
+    for l = 1: length(k)
+        [~,CP2B] = sort(sum(abs([xs(:), ys(:)]-beamLocNode(l,1:2)),2)); % CP2B : Closest Point to Beam
+        Normal2P = Normal{c}(:,CP2B(1));
+        if c==1
+            ni = 1;
+            nt = mean(dn(:,l));
+            [diattMatrix{l,1},diattAxis(l,1),diattMag(l,1)] = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
+            
+        %borrar
+        JonesMatrix{l} = JonesMatrix{l}*diattMatrix{l,1};
+        elseif c==length(Layer)
+            ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+            nt = 1;
+            diattMatrix{l,2} = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
+            %borrar
+%             JonesMatrix{l} = diattMatrix{l,2}*JonesMatrix{l};
+        end
+    end
+end
+diattAxisMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattAxis(:,1),xs,ys);
+diattMagMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattMag(:,1),xs,ys);
+end
+
+
 %% Wave front calculation
 
 % OPL = zeros(1,length(k));
@@ -200,9 +245,12 @@ OPL = zeros(1,length(k));
 WF = cell(2,length(Layer)-1); 
 for c=1:length(Layer)-1
     for l = 1: length(k)
-        BirL = (birefringence{c}(l)+birefringence{c+1}(l))/2;
-        n1 = ((nBeam{c,l}(1)+nBeam{c+1,l}(1))/2)-n0;
-        n2 = ((nBeam{c,l}(2)+nBeam{c+1,l}(2))/2)-n0;
+         if c==1
+             n1=0; n2=0;
+         else
+             n1 = ((nBeam{c-1,l}(1)+nBeam{c,l}(1))/2)-n0;
+             n2 = ((nBeam{c-1,l}(2)+nBeam{c,l}(2))/2)-n0;
+        end
         OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
     end
     if c==1
@@ -222,7 +270,7 @@ if verbosity == 1
     Efactor = 1;
     OutLayer = length(Layer) ;
     l = 250;
-    chiThreshold = pi/(2^10);
+    chiThreshold = pi/(2^7);
     ellipsize = 5;
     arrowsize = 5;
     stepplot = 1:5:51;
@@ -239,21 +287,27 @@ end
 if verbosity == 1
     birefringenceMap = birefringence{1};
     birefringenceMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),birefringenceMap,xs,ys);
-    figure,imagesc(birefringenceMap),colorbar, colormap jet, title('Front birefringence map'), colorbar
+    figure,imagesc(birefringenceMap),colorbar, colormap ('plasma'), title('Front birefringence map'), colorbar
     birefringenceMap = birefringence{length(Layer)};
     birefringenceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),birefringenceMap,xs,ys);
-    figure,imagesc(birefringenceMap),colorbar, colormap jet, title('Rear birefringence map'), colorbar
+    figure,imagesc(birefringenceMap*-1),colorbar, colormap ('plasma'), title('Rear birefringence map'), colorbar
     axesRotMap = axesRot{1};
     axesRotMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),axesRotMap,xs,ys);
-    figure,imagesc(axesRotMap),colorbar, colormap jet, title('Front fast axis orientation map'), colorbar
+    figure,imagesc(axesRotMap),colorbar, colormap(flipud(cmap('c3','shift',0.25))), title('Front fast axis orientation map'), colorbar
     axesRotMap = axesRot{length(Layer)};
     axesRotMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),axesRotMap,xs,ys);
-    figure,imagesc(axesRotMap),colorbar, colormap jet, title('Rear fast axis orientation map'), colorbar
+    figure,imagesc(axesRotMap),colorbar, colormap(flipud(cmap('c3','shift',0.25))), title('Rear fast axis orientation map'), colorbar
 end
 
 if verbosity == 1
-    figure,imagesc(WF{2,1}), title('Front wavefront'), colorbar
-    figure,imagesc(WF{2,end}), title('Rear wavefront'), colorbar
+%     figure,imagesc(WF{2,1}), colormap('plasma'), title('Front wavefront'), colorbar
+    figure,imagesc(WF{2,end}), colormap(colorcet('cbl1')), title('Stress birefringence wavefront error'), colorbar
+    figure,imagesc(retardanceMap), colormap ('plasma'), title('Retardance'), colorbar
+    figure,imagesc(thetaEndMap), colormap(flipud(cmap('c3','shift',0.25))), title('Effective fast axis orientation'), colorbar
+    if considerDiattenuation == 1
+        figure,imagesc(diattAxisMap), colormap(flipud(cmap('c3','shift',0.25))),title('S-component orientation angle map'), colorbar
+        figure,imagesc(diattMagMap), colormap('inferno'),title('Diattenuation map'), colorbar
+    end
 end
 
 save('../Output/demo1Output','beamLoc','JonesMatrix','birefringence','axesRot')

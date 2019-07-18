@@ -18,9 +18,12 @@ if chi<chiThreshold
 else
     chishiftV=chishift;
 end
-% [~, xellip, yellip]=PlotEllip(psi+psishift,(chi+(chishiftV)*sign(chi)).*Efactor,0);
-[~, xellip, yellip]=PlotEllip(psi*psishift,(chi+(chishiftV)*sign(chi)).*Efactor,0);
-figure(Fnum), hold on,
+[~, xellip, yellip]=PlotEllip(psi+psishift,(chi+(chishiftV)*sign(chi)).*Efactor,0);
+% [~, xellip, yellip]=PlotEllip(psi*psishift,(chi+(chishiftV)*sign(chi)).*Efactor,0);
+figFlag = figure(Fnum); 
+hold on,
+screensize = get( groot, 'Screensize' );
+figFlag.Position = [screensize(3)/2-(0.8*screensize(4)/2), screensize(4)/2-(0.8*screensize(4)/2), 0.8*screensize(4), 0.8*screensize(4)];
 
 if chi>chiThreshold
     EColor = 'r';
@@ -31,7 +34,7 @@ elseif chi<-chiThreshold
 elseif abs(chi)<=chiThreshold
     EColor = 'k';
 end
-h(lt)=plot((yellip*ellipsize)+px(l),(xellip*ellipsize)+py(l),EColor,'LineWidth', 2);
+h(lt)=plot((xellip*ellipsize)+px(l),(yellip*ellipsize)+py(l),EColor,'LineWidth', 2);
 
 end
 axis image
