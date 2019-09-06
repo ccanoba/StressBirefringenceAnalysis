@@ -1,5 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
+
+% To check whether I can make modifications or not
+
 % This program calculates changes in the state of polarization of light 
 % after interacting with a loaded optical component. The fundamental 
 % concept used in the calculations is the photoelastic law, which allows
