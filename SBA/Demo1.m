@@ -14,7 +14,7 @@ addpath(genpath('../Functions'))
 StressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
                                         'lensConv4.txt','lensConvPress.txt','WindowExp.txt','WindowExpFS.txt'};
 
-Data=load(StressesDataFileName{6});
+Data=load(StressesDataFileName{5});
 
 verbosity = 0;
 
@@ -23,8 +23,8 @@ verbosity = 0;
 xu = Data(:,2); yu = Data(:,3); zu = Data(:,4);                                              % Undeformed nodes coordinates definition
 x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
 thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
-k11 = -0.7e-12;                                                         % Stress optical coeficient 1
-k12 = -4.3e-12;                                                         % Stress optical coeficient 1
+k11 = -0.5e-12;                                                         % Stress optical coeficient 1
+k12 = -3.3e-12;                                                         % Stress optical coeficient 1
 OSC = [k11, k12];
 lambda = 532e-9;                                                    % Light wavelenght
 n0 = 1.5;                                               % refractive index without load
