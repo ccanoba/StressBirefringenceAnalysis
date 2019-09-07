@@ -12,26 +12,12 @@ addpath('../Samples')
 addpath(genpath('../Functions'))
 
 StressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
-                                        'lensConv4.txt','lensConvPress.txt','WindowExp.txt','WindowExpFS.txt'};
+                                        'lensConv4.txt','lensConvPress.txt', 'Lens25.txt','lensConvTest.txt','MeshT_12.txt'};
 
-Data=load(StressesDataFileName{5});
+Data=load(StressesDataFileName{2});
 
 verbosity = 1;
 
-%% Parameters definition
-
-xu = Data(:,2); yu = Data(:,3); zu = Data(:,4);                                              % Undeformed nodes coordinates definition
-x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
-thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
-k11 = -0.5e-12;                                                         % Stress optical coeficient 1
-k12 = -3.3e-12;                                                         % Stress optical coeficient 1
-OSC = [k11, k12];
-lambda = 532e-9;                                                    % Light wavelenght
-n0 = 1.5;                                               % refractive index without load
-solMethod = 2;                                      % Method for solution. 1 numerical, 2 graphical.
-considerDiattenuation = 1;
-
-illumParam = sourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
 %% Parameters definition
 
 x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
@@ -45,12 +31,12 @@ Nsx = 101;                                                                   % n
 solMethod = 1;                                      % Method for solution. 1 numerical, 2 graphical.
 considerDiattenuation = 1;
 
-illumParam = sourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
+illumParam = sourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
+% illumParam = sourceDefinition(6, 12e-3, 24e-3, 24e-3, 26, 26, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);  
 
 [JonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
 
-%% Plot polarization map
-
+%%
 if verbosity == 1
     Intheta = 0;
     In = [cosd(Intheta) sind(Intheta)]'; In=In/norm(In);
@@ -59,18 +45,19 @@ if verbosity == 1
     OutLayer = length(Layer) ;
     l = 250;
     chiThreshold = pi/(2^7);
-    ellipsize = 5;
+    ellipsize = 3;
     arrowsize = 5;
-    stepplot = 1:5:51;
-    stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
+    stepplotR = 1:3:illumParam.NRI;
+    stepplotT = 1:3:illumParam.NTI;
+    stepplot = (reshape(repmat(stepplotR,length(stepplotT),1),length(stepplotR)*length(stepplotT),1)'-1)*illumParam.NTI+repmat(stepplotT,1,length(stepplotR));
+%     stepplot = 1:1:length(k);
     PosFactor = 5000;
-    NumF = 25;
+    NumF = 26;
     
     Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
     hold off
     title('Polarization map')
 end
-
 %%
 
 xs = max([abs(min(Data(:,2))), max(Data(:,2)), abs(min(Data(:,3))), max(Data(:,3))]);                 % x size of grid for interpolation
