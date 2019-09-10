@@ -1,4 +1,4 @@
-function [JonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity)
+function [JonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData, kBeam] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity)
 
 xu = Data(:,2); yu = Data(:,3);                                              % Undeformed nodes coordinates definition
 x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
