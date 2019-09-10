@@ -2,6 +2,10 @@
 % 
 % Graphical method to calculate efective birefringence and modes of
 % vibration for a beam propagating in an anisotropic media.
+%
+% This code was adapted from the implementation of the algorithms described in
+% P. Klein, "On the Ellipsoid and Plane Intersection Equation,"
+% Applied Mathematics, Vol. 3 No. 11, 2012, pp. 1634-1640. doi: 10.4236/am.2012.311226.
 % 
 % inputs
 % 
@@ -23,7 +27,7 @@ ka = @(na,nb,nc) (nc.*sqrt((nb.^2-na.^2)./(nc.^2-na.^2)));
 kb = @(nb,ka) sqrt(nb+ka).*sqrt(nb-ka);
 Ellipeq = @(v) v(1)^2/nx^2+v(2)^2/ny^2+v(3)^2/nz^2;
 
-% Propose possible permutations
+% Propose possible permutations of refractive index
 na = [nz nx ny];
 nb = [nx ny nz];
 nc = [ny nz nx];

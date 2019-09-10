@@ -4,8 +4,17 @@
 % and discretizes them into layers. Layers are found assuming the order
 % in which a diverging beam would interact with them.
 %
-% 
-
+% Inputs :
+%
+% Data : Nodes location and displacement obtained from FEM simulation
+% LayerFound : Information of the layer already found
+% Param : Illumination source definition
+%
+% Output :
+%
+% Layer1 : Node indices for the layer found in this iteration
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [Layer1] = FindNodeLayer(Data, LayerFound, Param)
 
@@ -20,47 +29,14 @@ xu = Data(:,2);
 yu = Data(:,3);
 zu = Data(:,4);
 
-minz=min(z);
-
-% parameter for the definition of illumination
-
-% RI = Param.RI;
-% % Number of divisions in RI
-% NRI = Param.NRI;
-% % Number of divisions in theta
-% NTI = Param.NTI;
-% % Distance to illumination plane
-% ZI = abs(Param.P0(3))+Param.posLim(5);
-% % Source Point
-% P0 = Param.P0;
-% 
-% % RI = 12e-3;                % Illuminaion cone radio
-% % NRI = 15;                   % Number of divisions in RI
-% % NTI = 36;                   % Number of divisions in theta
-% % ZI = 200e-3;              % Distance to illumination plane
-% % ZI = ZI+minz;
-% % 
-% % P0 = [0 0e-3 -200e-3]; % Source Point Location
-% 
-% % Create rays wave vectors
-% % VRI : radial vector component
-% % VTI : angular vector component
-% VRI = RI/NRI:RI/NRI:RI;
-% VRI = repmat(VRI,NTI,1);
-% VRI=reshape(VRI,[1,numel(VRI)]);
-% VTI = 0: 2*pi/NTI: 2*pi-(2*pi/NTI);
-% VTI=repmat(VTI,1,NRI);
-% % k : wavevector
-% k = [VRI'.*cos(VTI'), VRI'.*sin(VTI'), ones(NRI*NTI,1)*ZI];
-% k = [[0 0 ZI]; k];
-% k = k./sqrt(k(:,1).^2+k(:,2).^2+k(:,3).^2);  % normalization of k
-
+% Use collimated beam to find the surfaces
 if Param.illumCase == 5 || Param.illumCase == 6
     Param.illumCase = Param.illumCase-2;
 elseif Param.illumCase == 2
     Param.illumCase = 1;
 end
 
+% Define collimated beam
 [P0, k] = CreateRaysArray(Param);
 
 %%
@@ -103,7 +79,7 @@ zL = @(x,y) Scoeff.p00 + Scoeff.p10.*x + Scoeff.p01.*y + Scoeff.p20.*x.^2 + Scoe
 % Find z position for each node depending on its x-y coordinates
 ZL = zL(xu,yu);               % With xu,yu,zu
 
-% Threshold to determine which nodes belongs to the surface
+% Threshold to determine which nodes belongs to the surface/ Sensitive step
 if checktmp.rmse>1e-10
 [Layer1] = find(abs(zu-ZL)<=4.5*checktmp.rmse);        % With xu,yu,zu
 else

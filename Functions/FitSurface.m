@@ -1,4 +1,10 @@
 function [fitresult, gof] = FitSurface(tmpx, tmpy, tmpz, PD)
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Modified version of CREATEFIT of MATLAB
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %CREATEFIT(TMPX,TMPY,TMPZ)
 %  Create a fit.
 %

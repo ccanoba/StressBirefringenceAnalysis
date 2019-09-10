@@ -31,12 +31,16 @@ Nsx = 101;                                                                   % n
 solMethod = 1;                                      % Method for solution. 1 numerical, 2 graphical.
 considerDiattenuation = 1;
 
-% illumParam = sourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
-illumParam = sourceDefinition(1, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
+illumParam = sourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
+% illumParam = sourceDefinition(1, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
 % illumParam = sourceDefinition(6, 12e-3, 24e-3, 24e-3, 26, 26, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);  
 
-[JonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData, kBeam] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
+[RetardanceJonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
 
+JonesMatrix = cell(1, length(RetardanceJonesMatrix));
+for l=1:length(RetardanceJonesMatrix)
+    JonesMatrix{l} = diattData{1}{l,2}*RetardanceJonesMatrix{l}*diattData{1}{l,1};
+end
 %%
 if verbosity == 1
     Intheta = 0;
@@ -51,7 +55,6 @@ if verbosity == 1
     stepplotR = 1:3:illumParam.NRI;
     stepplotT = 1:3:illumParam.NTI;
     stepplot = (reshape(repmat(stepplotR,length(stepplotT),1),length(stepplotR)*length(stepplotT),1)'-1)*illumParam.NTI+repmat(stepplotT,1,length(stepplotR));
-%     stepplot = 1:1:length(k);
     PosFactor = 5000;
     NumF = 26;
     
@@ -80,18 +83,16 @@ if verbosity == 1
     figure,imagesc(axesRotMap),colorbar, colormap(flipud(cmap('c3','shift',0.25))), title('Rear fast axis orientation map'), colorbar
 end
 
-JM = cell2mat(JonesMatrix);
+JM = cell2mat(RetardanceJonesMatrix);
 
 retardance = 2*acos(real(JM(1,1:2:end)));
 thetaEnd1 = imag(JM(2,1:2:end))./sin(retardance/2);
 thetaEnd2 = imag(JM(1,1:2:end))./sin(retardance/2);
-% ThetaEnd(abs(ThetaEnd)>1) = 1;
 thetaEnd =atan2d(thetaEnd1, -thetaEnd2)/2;
 retardanceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),retardance',xs,ys);
 thetaEndMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),thetaEnd,xs,ys);
 
 if verbosity == 1
-%     figure,imagesc(WF{2,1}), colormap('plasma'), title('Front wavefront'), colorbar
     figure,imagesc(WF{2,end}), colormap(colorcet('cbl1')), title('Stress birefringence wavefront error'), colorbar
     figure,imagesc(retardanceMap), colormap ('plasma'), title('Retardance'), colorbar
     figure,imagesc(thetaEndMap), colormap(flipud(cmap('c3','shift',0.25))), title('Effective fast axis orientation'), colorbar

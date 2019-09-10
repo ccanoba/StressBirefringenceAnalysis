@@ -20,20 +20,6 @@ verbosity = 1;
 
 %% Parameters definition
 
-xu = Data(:,2); yu = Data(:,3); zu = Data(:,4);                                              % Undeformed nodes coordinates definition
-x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
-thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
-k11 = -0.5e-12;                                                         % Stress optical coeficient 1
-k12 = -3.3e-12;                                                         % Stress optical coeficient 1
-OSC = [k11, k12];
-lambda = 532e-9;                                                    % Light wavelenght
-n0 = 1.5;                                               % refractive index without load
-solMethod = 2;                                      % Method for solution. 1 numerical, 2 graphical.
-considerDiattenuation = 1;
-
-illumParam = sourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
-%% Parameters definition
-
 x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
 thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
 k11 = -0.5e-12;                                                         % Stress optical coeficient 1
@@ -47,8 +33,12 @@ considerDiattenuation = 1;
 
 illumParam = sourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
 
-[JonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
+[RetardanceJonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
 
+JonesMatrix = cell(1, length(RetardanceJonesMatrix));
+for l=1:length(RetardanceJonesMatrix)
+    JonesMatrix{l} = diattData{1}{l,2}*RetardanceJonesMatrix{l}*diattData{1}{l,1};
+end
 %% Plot polarization map
 
 if verbosity == 1
@@ -92,18 +82,16 @@ if verbosity == 1
     figure,imagesc(axesRotMap),colorbar, colormap(flipud(cmap('c3','shift',0.25))), title('Rear fast axis orientation map'), colorbar
 end
 
-JM = cell2mat(JonesMatrix);
+JM = cell2mat(RetardanceJonesMatrix);
 
 retardance = 2*acos(real(JM(1,1:2:end)));
 thetaEnd1 = imag(JM(2,1:2:end))./sin(retardance/2);
 thetaEnd2 = imag(JM(1,1:2:end))./sin(retardance/2);
-% ThetaEnd(abs(ThetaEnd)>1) = 1;
 thetaEnd =atan2d(thetaEnd1, -thetaEnd2)/2;
 retardanceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),retardance',xs,ys);
 thetaEndMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),thetaEnd,xs,ys);
 
 if verbosity == 1
-%     figure,imagesc(WF{2,1}), colormap('plasma'), title('Front wavefront'), colorbar
     figure,imagesc(WF{2,end}), colormap(colorcet('cbl1')), title('Stress birefringence wavefront error'), colorbar
     figure,imagesc(retardanceMap), colormap ('plasma'), title('Retardance'), colorbar
     figure,imagesc(thetaEndMap), colormap(flipud(cmap('c3','shift',0.25))), title('Effective fast axis orientation'), colorbar

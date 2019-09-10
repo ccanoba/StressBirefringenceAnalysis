@@ -208,14 +208,14 @@ for c=[1, length(Layer)]
         elseif c==length(Layer)
             ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
             nt = 1;
-            [diattMatrix{l,2},diattAxis(l,2),diattMag(l,2)] = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
+            diattMatrix{l,2} = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
             %borrar
             JonesMatrix{l} = diattMatrix{l,2}*JonesMatrix{l};
         end
     end
 end
-diattAxisMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattAxis(:,1),xs,ys);
-diattMagMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattMag(:,1),xs,ys);
+diattAxisMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattAxis(:,2),xs,ys);
+diattMagMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattMag(:,2),xs,ys);
 end
 
 

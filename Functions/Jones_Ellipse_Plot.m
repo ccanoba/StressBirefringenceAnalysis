@@ -1,3 +1,33 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% This function plots an array of polarization ellipses 
+%
+% Inputs :
+% 
+% J : It is a cell with n Jones matrices
+% In : Input polarization state using Jones notation
+% shift : Used to introduce a global offset in the ellipses parameters
+% Efactor : Parameter used to proportionally increase the ellipticity to
+%               improve visualization
+% Fnum : Figure number
+% px, py : Vectors with the coordinates of polarization ellipses, their
+%               length equal the number of Jones matrices in J
+% chiThreshold : Ellipticity angles below this value are considered
+%               linearly polarization states
+% ellipsize : Scales ellipse size for visualization
+% arrowsize : size of the arrows in plot
+% stepplot : vector with the indices of the elements of the cell J that
+% will be evaluated
+%
+% Output
+% 
+% Plot with polarization ellipses.
+% Red ellipses have right polarization, blue ellipses have left
+% polarization, black ellipses are below threshold and considered
+% quasilinear
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [] = Jones_Ellipse_Plot(J,In,shift, Efactor, Fnum, px, py, chiThreshold, ellipsize, arrowsize, stepplot)
 
 psishift=shift(1);
@@ -19,7 +49,6 @@ else
     chishiftV=chishift;
 end
 [~, xellip, yellip]=PlotEllip(psi+psishift,(chi+(chishiftV)*sign(chi)).*Efactor,0);
-% [~, xellip, yellip]=PlotEllip(psi*psishift,(chi+(chishiftV)*sign(chi)).*Efactor,0);
 figFlag = figure(Fnum); 
 hold on,
 screensize = get( groot, 'Screensize' );

@@ -3,6 +3,15 @@
 % This function creates a rays array that will interact with the volume
 % described by the nodes of the finite element model
 %
+% Input :
+%
+% sourceParam : The source parameter are defined using sourceDefinition
+%
+% Output :
+%
+% P0 : Origin of every ray in the model
+% k : wavevector for every ray in the model
+%
 % case 1 : Diverging spherical discretization
 % case 2 : Collimated spherical discretization
 % case 3 : Diverging square discretization. Square shape
@@ -34,13 +43,17 @@ if illumCase == 1 || illumCase==2                % Spherical segmentation. Theta
     VRI=reshape(VRI,[1,numel(VRI)]);
     VTI = 0: 2*pi/NTI: 2*pi-(2*pi/NTI);
     VTI=repmat(VTI,1,NRI);    
+    % Definition of a point diveging source with circular shape and polar
+    % discretization
     if illumCase == 1
         k = [VRI'.*cos(VTI'), VRI'.*sin(VTI'), ones(NRI*NTI,1)*ZI];
         k = [[0 0 ZI]; k];
         k = k./sqrt(k(:,1).^2+k(:,2).^2+k(:,3).^2);  % normalization of k
     else
+        % Definition of a collimated illumination with circular shape and
+        % polar discretization
         P0 = [VRI'.*cos(VTI'), VRI'.*sin(VTI'), sign(sourceParam.P0(3))*ones(numel(VRI),1)*ZI];
-        k = [0,0, 1];
+        k = [0,0,1];
     end    
     
 elseif illumCase == 3 || illumCase == 4
@@ -56,7 +69,7 @@ elseif illumCase == 3 || illumCase == 4
     x = linspace(-xside/2, xside/2, Nx+1);
     y = linspace(-yside/2, yside/2, Ny+1);
     
-    [x,y] = meshgrid(x,y);
+    [x,y] = meshgrid(x,y);  % Square discretization, square aperture
     
     if illumCase == 4 % Square discretization, circular aperture
         [~,R] = cart2pol(x,y);

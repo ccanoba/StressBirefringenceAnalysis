@@ -1,12 +1,41 @@
-function [JonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData, kBeam] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-xu = Data(:,2); yu = Data(:,3);                                              % Undeformed nodes coordinates definition
+% Inputs :
+% 
+% Data:
+% n0 :
+% OSC : 
+% lambda :
+% illumParam :
+% Nsx :
+% thetaref :
+% solMethod :
+% considerDiattenuation:
+% verbosity :
+
+% Outputs :
+% 
+% RetardanceJonesMatrix :
+% Layer :
+% beamLoc :
+% birefringence :
+% axesRot :
+% WF :
+% diattData :
+% kBeam :
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [RetardanceJonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData, kBeam] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity)
+
+xu = Data(:,2); yu = Data(:,3);                                                                     % Undeformed nodes coordinates definition
 x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
 
 %% Discretize nodes in the model into layers
 
 fprintf('Nodes cloud discretization\n')
 
+% Variables used to temporarily store the indices of the nodes
+% corresponding to each layer.
 LayerFound = [];
 cont = 1;
 haveNodes = true;
@@ -23,7 +52,6 @@ end
 clear LayerFound cont haveNodes
 
 %% Plot layers
-% close all
 
 if verbosity == 1
     colores = ['r','b','g'];
@@ -60,9 +88,9 @@ end
 
 fprintf('Surfaces normals calculation\n')
 
-xs = max([abs(min(xu)), max(xu), abs(min(yu)), max(yu)]);                 % x size of grid for interpolation
+xs = max([abs(min(xu)), max(xu), abs(min(yu)), max(yu)]);                 % size of grid for interpolation
 
-xs = linspace(-xs, xs, Nsx);                                           % x axis definition
+xs = linspace(-xs, xs, Nsx);                                           % axis definition
 dxs = xs(2)-xs(1);                                                          % delta size in interpolation grid 
 
 [xs, ys] = meshgrid(xs, xs);                                           % grid creation
@@ -71,11 +99,9 @@ zs = cell(1,length(Layer));                                            % interpo
 Normal = cell(1,length(Layer));                                    % cell with and array of normal vector for different positions in the nodes cloud
 for l = 1:length(Layer)
     [zs{l}] = griddata(x(Layer{l}),y(Layer{l}),z(Layer{l}),xs,ys);
-%     zs{l}(isnan(zs{l})) = 0;
     [Normal{l}] = NormalDir (zs{l}, dxs);
 end
-
-% clear zs
+clear zs
 %% Ray tracing
 
 [ke1,ke2] = BeamAxes(k', [cosd(thetaref) sind(thetaref) 0]');         % Find polarization axes, based on a linear polarization reference. ke2 is the reference
@@ -88,15 +114,13 @@ kBeam{1} = k';
 dn = ones(size(k'));                                % index of refraction in nodes per iteration
 dnBeam = cell(1,length(Layer)+2);               % index of refraction in nodes
 dnBeam{1} = dn; dnBeam{end} = dn;
-ni = ones(length(Layer)+1);                    % index of refraction incident medium
-nt = ones(length(Layer)+1);                    % index of refraction transmited medium
 beamEllipCoor = cell(length(Layer), length(k));  % Beam direction in ellipsoid coordinate system
 nBeam = cell(length(Layer), length(k));             % Index of refraction for a direction of propagation
 nBeamDir = cell(length(Layer), length(k));         % Modes of propagation 
 globalDCoor = cell(length(Layer), length(k));     % Modes of propagation of D in the global coordinate system
 birefringence = cell(1, length(Layer));                % Birefringence
 axesRot = cell(1, length(Layer));                         % Axes of rotation of the optical axes
-JonesMatrix = cell(1, length(Layer));                   % Jones matrices
+RetardanceJonesMatrix = cell(1, length(k));                   % Jones matrices
 
 for c = 1:length(Layer)                                        % iteration per layer
     fprintf('Ray tracing in layer %u\n',c)
@@ -109,10 +133,9 @@ for l = 1: length(k)                                               % iteration p
     [~,CP2B] = sort(sqrt(sum(([xs(:), ys(:)]-beamLocNode(l,1:2)).^2,2))); % CP2B : Closest Point to Beam
     Normal2P = Normal{c}(:,CP2B(1));
     [dn(:,l), StressVD] = StressBir (Strains, beamLocNode(l,1:2), xs(CP2B(1:4)), ys(CP2B(1:4)), CP2B(1:4), OSC, n0);
-%     StressVDtmp{l}=StressVD(4:12);
     if c==1
-        ni = 1;
-        nt = mean(dn(:,l));
+        ni = 1;                                         % index of refraction incident medium
+        nt = mean(dn(:,l));                      % index of refraction transmited medium
     elseif c==length(Layer)
         ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
         nt = 1;
@@ -132,7 +155,7 @@ dnBeam{c+1} = dn;
 [birefringence{c}, axesRot{c}] = JonesMatrixParam(nBeam(c,:), globalDCoor(c,:), kBeam{c+1}, thetaref);
 end
 
-%%
+%% Calculation of retardance Jones matrices, assuming twisted nematic behaviour of the medium
 fprintf('Jones calculation\n')
 
 for l = 1: length(k)
@@ -142,20 +165,9 @@ for l = 1: length(k)
         [Jml] = TwistedBirElem(beamLoc{c+1}(l,:),beamLoc{c+2}(l,:), BirL, lambda, axesRot{c}(l,:),axesRot{c+1}(l,:));
         Jm = Jml*Jm;
     end
-    JonesMatrix{l} = Jm;
+    RetardanceJonesMatrix{l} = Jm;
 end
-
-%% Retardance and effective orientation angle calculation
-% JM = cell2mat(JonesMatrix);
-% 
-% retardance = 2*acos(real(JM(1,1:2:end)));
-% thetaEnd1 = imag(JM(2,1:2:end))./sin(retardance/2);
-% thetaEnd2 = imag(JM(1,1:2:end))./sin(retardance/2);
-% % ThetaEnd(abs(ThetaEnd)>1) = 1;
-% thetaEnd =atan2d(thetaEnd1, -thetaEnd2)/2;
-% retardanceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),retardance',xs,ys);
-% thetaEndMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),thetaEnd,xs,ys);
-%% Diattenuation
+%% Diattenuation calculation at the front and rear faces
 
 diattData = {};
 if considerDiattenuation == 1
@@ -172,15 +184,10 @@ for c=[1, length(Layer)]
             ni = 1;
             nt = mean(dn(:,l));
             [diattMatrix{l,1},diattAxis(l,1),diattMag(l,1)] = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
-            
-        %borrar
-        JonesMatrix{l} = JonesMatrix{l}*diattMatrix{l,1};
         elseif c==length(Layer)
             ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
             nt = 1;
             diattMatrix{l,2} = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
-            %borrar
-%             JonesMatrix{l} = diattMatrix{l,2}*JonesMatrix{l};
         end
     end
 end
@@ -188,27 +195,6 @@ diattAxisMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattAxis(:,1),xs,ys);
 diattMagMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattMag(:,1),xs,ys);
 diattData = {diattMatrix, diattAxisMap, diattMagMap};
 end
-%% Wave front calculation
-
-% OPL = zeros(1,length(k));
-% WF = cell(2,length(Layer)); 
-% for c=1:length(Layer)
-%     for l = 1: length(k)
-%         n1 = ((nBeam{c-1,l}(1)+nBeam{c,l}(1))/2);
-%         n2 = ((nBeam{c-1,l}(2)+nBeam{c,l}(2))/2);
-%         if c==1
-%             n1=1; n2=1;
-%         end
-%         OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
-%     end
-%     if c==1
-%         WF{1,c} = OPL;
-%     else
-%         WF{1,c} = WF{1,c-1}+OPL;
-%     end
-%     WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c},xs,ys);
-% end
-
 %% Wave front error calculation
 
 OPL = zeros(1,length(k));

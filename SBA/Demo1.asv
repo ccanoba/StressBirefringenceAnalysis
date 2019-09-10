@@ -35,7 +35,11 @@ illumParam = sourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x)
 % illumParam = sourceDefinition(1, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
 % illumParam = sourceDefinition(6, 12e-3, 24e-3, 24e-3, 26, 26, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);  
 
-[JonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData, kBeam] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
+[RetardanceJonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
+
+% for i=1:length(RetardanceJonesMatrix)
+    JonesMatrix{i} = diattData{}
+% end
 
 %%
 if verbosity == 1
@@ -80,7 +84,7 @@ if verbosity == 1
     figure,imagesc(axesRotMap),colorbar, colormap(flipud(cmap('c3','shift',0.25))), title('Rear fast axis orientation map'), colorbar
 end
 
-JM = cell2mat(JonesMatrix);
+JM = cell2mat(RetardanceJonesMatrix);
 
 retardance = 2*acos(real(JM(1,1:2:end)));
 thetaEnd1 = imag(JM(2,1:2:end))./sin(retardance/2);
@@ -102,16 +106,3 @@ if verbosity == 1
 end
 
 save('../Output/demo1Output','beamLoc','JonesMatrix','birefringence','axesRot')
-
-%%
-
-zi = 200e3;
-beamLocTracing = reshape(cell2mat(beamLoc), length(JonesMatrix), 3, length(Layer)+1);
-kBeamTracing = permute(reshape(cell2mat(kBeam), 3, length(JonesMatrix),  length(Layer)+1),[2,1,3]);
-t = (zi-beamLocTracing(:,3,end))./kBeamTracing(:,3,end);
-beamLocTracing(:,:,end+1) = beamLocTracing(:,:,end)+kBeamTracing(:,:,end).*t;
-
-figure
-for i=1:36:size(beamLocTracing,1)
-    hold on, plot3(permute(beamLocTracing(i,1,:)),beamLocTracing(i,2,:),beamLocTracing(i,3,:))
-end

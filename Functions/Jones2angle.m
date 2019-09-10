@@ -1,3 +1,19 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% This function calcualtes the orientation angle and ellipsticity angle
+% from the Jones vector describen the polarization state of a beam
+%
+% Input :
+%
+% Jones : Jones vector of the beam
+%
+% Output : 
+%
+% psi : Orientation angle of the ellipse
+% chi : Ellipticity angle
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [psi,chi]=Jones2angle(Jones)
 
 Ax=sqrt(Jones(1,1)*conj(Jones(1,1)));

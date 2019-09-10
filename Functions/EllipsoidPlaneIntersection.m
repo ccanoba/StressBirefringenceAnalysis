@@ -67,7 +67,6 @@ if D==0,    q1=0;q2=0;q3=0;
     
 end
 
-% quz=sqrt(q1^2+q2^2+q3^2);
 n1=A/sqrt(A^2+B^2+C^2);
 n2=B/sqrt(A^2+B^2+C^2);
 n3=C/sqrt(A^2+B^2+C^2);
