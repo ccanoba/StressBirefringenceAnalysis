@@ -37,7 +37,7 @@ stressTensor = [StressT(1), StressT(4), StressT(6);...
                           StressT(6), StressT(5), StressT(3)];
                       
 % Diagonalization of the stress tensor                      
-[PSD, PSV]=principalStresses(stressTensor);
+[PSD, PSV]=PrincipalStresses(stressTensor);
 
 StressVD(1:3) = PSV([1,5,9]);
 StressVD(4:12) = PSD(1:9); 

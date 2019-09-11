@@ -8,33 +8,21 @@
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('../Samples')
-addpath(genpath('../Functions'))
+% add path to functions
+addpath(genpath('..'))
 
-StressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
+stressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
                                         'lensConv4.txt','lensConvPress.txt','WindowExp.txt','WindowExpFS.txt'};
 
-Data=load(StressesDataFileName{5});
+% Load data from FEM analysis
+data=load(stressesDataFileName{5});
 
+% 1 for plotting results
 verbosity = 1;
 
 %% Parameters definition
 
-xu = Data(:,2); yu = Data(:,3); zu = Data(:,4);                                              % Undeformed nodes coordinates definition
-x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
-thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
-k11 = -0.5e-12;                                                         % Stress optical coeficient 1
-k12 = -3.3e-12;                                                         % Stress optical coeficient 1
-OSC = [k11, k12];
-lambda = 532e-9;                                                    % Light wavelenght
-n0 = 1.5;                                               % refractive index without load
-solMethod = 2;                                      % Method for solution. 1 numerical, 2 graphical.
-considerDiattenuation = 1;
-
-illumParam = sourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
-%% Parameters definition
-
-x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
+x = data(:,2)+data(:,11); y = data(:,3)+data(:,12); z = data(:,4)+data(:,13); % Deformed nodes coordinates definition
 thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
 k11 = -0.5e-12;                                                         % Stress optical coeficient 1
 k12 = -3.3e-12;                                                         % Stress optical coeficient 1 3.3
@@ -43,37 +31,52 @@ lambda = 532e-9;                                                    % Light wave
 n0 = 1.5;                                               % refractive index without load
 Nsx = 101;                                                                   % number of divisions in grid for interpolation
 solMethod = 1;                                      % Method for solution. 1 numerical, 2 graphical.
-considerDiattenuation = 1;
+considerDiattenuation = 1;                  % 1 to calculate diattenuation on front and rear surfaces
 
-illumParam = sourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
+% Defines the model source, help SourceDefinition to identify parameters
 
-[JonesMatrix, Layer, beamLoc, birefringence, axesRot, WF, diattData] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
+% Collimated square discretization. Square shape
+illumParam = SourceDefinition(5, 49e-3, 49e-3, 50, 50, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);
 
+% Ray tracing in stress birefringent component
+[retardanceJonesMatrix, Layer, beamLoc, kBeam, birefringence, axesRot, WF, diattData] = StressBirRayTracing(data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
+
+% If diattenuation is calculated, it is multiplied by the retardance
+% considering that front surfaces effect is before retardance and rear
+% surface effect act after retardance
+if considerDiattenuation == 1
+    JonesMatrix = cell(1, length(retardanceJonesMatrix));
+    for l=1:length(retardanceJonesMatrix)
+        JonesMatrix{l} = diattData{1}{l,2}*retardanceJonesMatrix{l}*diattData{1}{l,1};
+    end
+else
+    JonesMatrix = retardanceJonesMatrix;
+end
 %% Plot polarization map
 
 if verbosity == 1
     Intheta = 0;
     In = [cosd(Intheta) sind(Intheta)]'; In=In/norm(In);
     shift = [0 0];
-    Efactor = 1;
-    OutLayer = length(Layer) ;
-    l = 250;
+    eFactor = 1;
+    outLayer = length(Layer) ;
     chiThreshold = pi/(2^7);
     ellipsize = 5;
     arrowsize = 5;
     stepplot = 1:5:51;
     stepplot = sub2ind([51,51], repmat(stepplot,1,length(stepplot)), reshape(repmat(stepplot,length(stepplot),1),1,length(stepplot)^2));
     PosFactor = 5000;
-    NumF = 25;
+    Fnum = 25;
     
-    Jones_Ellipse_Plot(JonesMatrix,In,shift, Efactor, NumF, beamLoc{OutLayer}(:,1)*PosFactor, beamLoc{OutLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
+    Jones_Ellipse_Plot(JonesMatrix,In,shift, eFactor, Fnum, beamLoc{outLayer}(:,1)*PosFactor, beamLoc{outLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
     hold off
     title('Polarization map')
 end
 
-%%
+%% Visualize results
 
-xs = max([abs(min(Data(:,2))), max(Data(:,2)), abs(min(Data(:,3))), max(Data(:,3))]);                 % x size of grid for interpolation
+% Define space to interpolate results
+xs = max([abs(min(data(:,2))), max(data(:,2)), abs(min(data(:,3))), max(data(:,3))]);                 % x size of grid for interpolation
 xs = linspace(-xs, xs, Nsx);                                           % x axis definition
 [xs, ys] = meshgrid(xs, xs);                                           % grid creation
 
@@ -92,18 +95,16 @@ if verbosity == 1
     figure,imagesc(axesRotMap),colorbar, colormap(flipud(cmap('c3','shift',0.25))), title('Rear fast axis orientation map'), colorbar
 end
 
-JM = cell2mat(JonesMatrix);
-
+% Calculates retardance and orientation maps
+JM = cell2mat(retardanceJonesMatrix);
 retardance = 2*acos(real(JM(1,1:2:end)));
 thetaEnd1 = imag(JM(2,1:2:end))./sin(retardance/2);
 thetaEnd2 = imag(JM(1,1:2:end))./sin(retardance/2);
-% ThetaEnd(abs(ThetaEnd)>1) = 1;
 thetaEnd =atan2d(thetaEnd1, -thetaEnd2)/2;
 retardanceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),retardance',xs,ys);
 thetaEndMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),thetaEnd,xs,ys);
 
 if verbosity == 1
-%     figure,imagesc(WF{2,1}), colormap('plasma'), title('Front wavefront'), colorbar
     figure,imagesc(WF{2,end}), colormap(colorcet('cbl1')), title('Stress birefringence wavefront error'), colorbar
     figure,imagesc(retardanceMap), colormap ('plasma'), title('Retardance'), colorbar
     figure,imagesc(thetaEndMap), colormap(flipud(cmap('c3','shift',0.25))), title('Effective fast axis orientation'), colorbar
@@ -113,4 +114,5 @@ if verbosity == 1
     end
 end
 
-save('../Output/demo1Output','beamLoc','JonesMatrix','birefringence','axesRot')
+% Save outputs for further analysis
+save('../Output/demo2Output','beamLoc','kBeam','JonesMatrix','birefringence','axesRot')

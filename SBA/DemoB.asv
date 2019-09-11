@@ -8,20 +8,22 @@
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('../Samples')
-addpath(genpath('../Functions'))
+% add path to functions
+addpath(genpath('..'))
 
-StressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
+stressesDataFileName = {'SqWindow4.txt', 'lensConv.txt',...
                                         'lensConv4.txt','lensConvPress.txt', 'Lens25.txt','lensConvTest.txt','MeshT_12.txt'};
 
-Data=load(StressesDataFileName{2});
+% Load data from FEM analysis
+data=load(stressesDataFileName{2});
 
+% 1 for plotting results
 verbosity = 1;
 
 %% Parameters definition
 
-xu = Data(:,2); yu = Data(:,3); zu = Data(:,4);                                              % Undeformed nodes coordinates definition
-x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
+xu = data(:,2); yu = data(:,3); zu = data(:,4);                                              % Undeformed nodes coordinates definition
+x = data(:,2)+data(:,11); y = data(:,3)+data(:,12); z = data(:,4)+data(:,13); % Deformed nodes coordinates definition
 thetaref = 0;                                                                                   % Orientation of the reference plane of polarization respect to x
 k11 = -0.5e-12;                                                         % Stress optical coeficient 1
 k12 = -3.3e-12;                                                         % Stress optical coeficient 1 3.3
@@ -43,10 +45,10 @@ cont = 1;
 haveNodes = true;
 
 while haveNodes==true
-    Layer{cont}=FindNodeLayer(Data, LayerFound, illumParam);
+    Layer{cont}=FindNodeLayer(data, LayerFound, illumParam);
     LayerFound = [LayerFound; Layer{cont}];
     cont = cont+1;
-    if length(LayerFound)==length(Data)
+    if length(LayerFound)==length(data)
         haveNodes = false;
     end
 end
@@ -134,7 +136,7 @@ for c = 1:length(Layer)                                        % iteration per l
     fprintf('Ray tracing in layer %u\n',c)
     Strains = cell(1,6);
     for w=1:6                                                        % Stress tensor
-    [Strains{w}] = griddata(x(Layer{c}),y(Layer{c}),Data(Layer{c},4+w),xs,ys);
+    [Strains{w}] = griddata(x(Layer{c}),y(Layer{c}),data(Layer{c},4+w),xs,ys);
     end
 for l = 1: length(k)                                               % iteration per ray
     [beamLocNode(l,:)] =RayPos(x(Layer{c}), y(Layer{c}), z(Layer{c}), beamLoc{c}(l,:), kBeam{c}(:,l));
@@ -208,14 +210,14 @@ for c=[1, length(Layer)]
         elseif c==length(Layer)
             ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
             nt = 1;
-            diattMatrix{l,2} = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
+            [diattMatrix{l,2},diattAxis(l,2),diattMag(l,2)] = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
             %borrar
             JonesMatrix{l} = diattMatrix{l,2}*JonesMatrix{l};
         end
     end
 end
-diattAxisMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattAxis(:,2),xs,ys);
-diattMagMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattMag(:,2),xs,ys);
+diattAxisMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattAxis(:,1),xs,ys);
+diattMagMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattMag(:,1),xs,ys);
 end
 
 
