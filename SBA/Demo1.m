@@ -11,7 +11,7 @@
 % add path to functions
 addpath(genpath('..'))
 
-stressesDataFileName = {'lensConv.txt', 'lensConv4.txt','lensConvPress.txt'};
+stressesDataFileName = {'lensConv.txt', 'lensConv4.txt'};
 
 % Load data from FEM analysis
 data=load(stressesDataFileName{1});
@@ -35,11 +35,11 @@ considerDiattenuation = 1;                  % 1 to calculate diattenuation on fr
 % Defines the model source, help SourceDefinition to identify parameters
 
 % Collimated spherical discretization
-illumParam = SourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
+% illumParam = SourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
 % Diverging spherical discretization
 % illumParam = SourceDefinition(1, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]); 
 % Collimated square discretization. Circular shape
-% illumParam = SourceDefinition(6, 12e-3, 24e-3, 24e-3, 26, 26, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);  
+illumParam = SourceDefinition(6, 12e-3, 24e-3, 24e-3, 26, 26, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);  
 
 % Ray tracing in stress birefringent component
 [retardanceJonesMatrix, Layer, beamLoc, kBeam, birefringence, axesRot, WF, diattData] = StressBirRayTracing(data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
@@ -57,7 +57,7 @@ else
 end
 %% Plots polarization map
 
-if verbosity == 1
+if verbosity == 1 && ismember(illumParam.illumCase, [1,2])
     Intheta = 0;        % Angle of orientation for linear polarizarion state
     In = [cosd(Intheta) sind(Intheta)]'; In=In/norm(In);    % Define linear polarization state using Intheta
     shift = [0 0];      % Used to introduce a global offset in the ellipses parameters

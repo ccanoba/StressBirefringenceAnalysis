@@ -1,0 +1,3 @@
+This folder structure contains the full source code (inside matlab) to use the tomographic non-local despeckling TNode on any optical coherence tomography volume. The Analysis folder contains the exemplary script which loads a small tomogram of an an endoscopic scan and calls the main despeckling function. The Data folder contains the volume used in the exemplary script. The matlab folder contains the main functions of TNode and the third party functions as well.
+
+In the Analysis folder the script can be run directly as long as the current folder in MATLAB is the Analysis folder. Any additional required paths will be added inside the exemplary scripts and the main routine.

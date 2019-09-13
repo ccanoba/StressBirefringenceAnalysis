@@ -72,7 +72,8 @@ dn = n0+[dn1, dn2, dn3];
 % 
 %       Fv : interpolated value
 
-        
+        Strains(isnan(Strains)) = 0;
+
         xs = sort(x);
         ys = sort(y);
         

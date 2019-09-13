@@ -161,6 +161,9 @@ for l = 1: length(k)                                               % iteration p
     [~,CP2B] = sort(sqrt(sum(([xs(:), ys(:)]-beamLocNode(l,1:2)).^2,2))); % CP2B : Closest Point to Beam
     Normal2P = Normal{c}(:,CP2B(1));
     % Calculates index tensor magnitude and principal directions
+    if l==1739
+        a=0;
+    end
     [dn(:,l), StressVD] = StressBir (Strains, beamLocNode(l,1:2), xs(CP2B(1:4)), ys(CP2B(1:4)), CP2B(1:4), OSC, n0);
     % incident and transmitted refractive indices, according to the model surfaces.
     if c==1         % The element is in air

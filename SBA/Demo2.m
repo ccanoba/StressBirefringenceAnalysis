@@ -14,7 +14,7 @@ addpath(genpath('..'))
 stressesDataFileName = {'SqWindow4.txt', 'WindowExpBK7.txt', 'WindowExpFS.txt'};
 
 % Load data from FEM analysis
-data=load(stressesDataFileName{2});
+data=load(stressesDataFileName{1});
 
 % 1 for plotting results
 verbosity = 1;
