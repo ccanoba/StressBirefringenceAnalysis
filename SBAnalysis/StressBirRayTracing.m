@@ -9,7 +9,7 @@
 % Data : Matrix with the information related to the stresses obtained via
 %           FEM analysis, the first dimension is the node number. The
 %           second dimension are the node index; nodes coordinates x,y,z;
-%           normal stresses x,y,z; shear stresses sxy,syz,syz; nodes
+%           normal stresses x,y,z; shear stresses sxy,syz,szx; nodes
 %           displacement dx,dy,dz.
 % n0 : Refractive index without stress.
 % OSC : Optical stress coefficients.
@@ -47,11 +47,11 @@
 % kBeam : Cell array with ray wayvector on every surface.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [retardanceJonesMatrix, Layer, beamLoc, kBeam, birefringence, axesRot, WF, diattData] = StressBirRayTracing(Data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity)
+function [retardanceJonesMatrix, layer, beamLoc, kBeam, birefringence, axesRot, WF, diattData] = StressBirRayTracing(data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity)
 % Selection of nodes coordinates from FEM data
 
-xu = Data(:,2); yu = Data(:,3);                                                                     % Undeformed nodes coordinates definition
-x = Data(:,2)+Data(:,11); y = Data(:,3)+Data(:,12); z = Data(:,4)+Data(:,13); % Deformed nodes coordinates definition
+xu = data(:,2); yu = data(:,3);                                                                     % Undeformed nodes coordinates definition
+x = data(:,2)+data(:,11); y = data(:,3)+data(:,12); z = data(:,4)+data(:,13); % Deformed nodes coordinates definition
 
 %% Discretize nodes in the model into layers
 
@@ -59,16 +59,16 @@ fprintf('Nodes cloud discretization\n')
 
 % Variables used to temporarily store the indices of the nodes
 % corresponding to each layer.
-LayerFound = [];
+layerFound = [];
 cont = 1;
 haveNodes = true;
 
 % Identify nodes that belongs to a surface in front to light path
 while haveNodes == true
-    Layer{cont}=FindNodeLayer(Data, LayerFound, illumParam);
-    LayerFound = [LayerFound; Layer{cont}];
+    layer{cont}=FindNodeLayer(data, layerFound, illumParam);
+    layerFound = [layerFound; layer{cont}];
     cont = cont+1;
-    if length(LayerFound)==length(Data)
+    if length(layerFound)==length(data)
         haveNodes = false;
     end
 end
@@ -79,8 +79,8 @@ clear LayerFound cont haveNodes
 
 if verbosity == 1
     colores = ['r','b','g'];
-    for i=1:length(Layer)
-        hold on,plot3(z(Layer{i}),y(Layer{i}),x(Layer{i}),[colores(mod(i,3)+1) '*'])
+    for i=1:length(layer)
+        hold on,plot3(z(layer{i}),y(layer{i}),x(layer{i}),[colores(mod(i,3)+1) '*'])
         xlabel('z'), ylabel('y'), zlabel('x')
         view([0.5 0.5 0.5])
         pause(1)
@@ -93,21 +93,21 @@ end
 fprintf('Generating rays source\n')
 
 % Calculate the initial position and wavevector for rays in model
-[P0, k] = CreateRaysArray(illumParam);
+[p0, k] = CreateRaysArray(illumParam);
 
 % Plot rays, Collimated and diverging beams have different initial
 % conditions
 if ismember(illumParam.illumCase, [1,3,4])
-    P0 = repmat(P0,length(k),1);
+    p0 = repmat(p0,length(k),1);
     if verbosity == 1 % plotting rays
-        hold on,quiver3 (P0(:,3),P0(:,2),P0(:,1),k(:,3)*abs(illumParam.P0(3)),k(:,2)*abs(illumParam.P0(3)),k(:,1)*abs(illumParam.P0(3)),'ShowArrowHead','off','AutoScale','off')
-        plot3 (P0(:,3),P0(:,2),P0(:,1),'r*'), hold off
+        hold on,quiver3 (p0(:,3),p0(:,2),p0(:,1),k(:,3)*abs(illumParam.P0(3)),k(:,2)*abs(illumParam.P0(3)),k(:,1)*abs(illumParam.P0(3)),'ShowArrowHead','off','AutoScale','off')
+        plot3 (p0(:,3),p0(:,2),p0(:,1),'r*'), hold off
     end
 elseif ismember(illumParam.illumCase, [2,5,6])
-    k = repmat(k,length(P0),1);
+    k = repmat(k,length(p0),1);
     if verbosity == 1 % plotting rays
-        hold on,quiver3 (P0(:,3),P0(:,2),P0(:,1),k(:,3)*abs(illumParam.P0(3)),k(:,2)*abs(illumParam.P0(3)),k(:,1)*abs(illumParam.P0(3)),'ShowArrowHead','off','AutoScale','off')
-        plot3 (P0(:,3),P0(:,2),P0(:,1),'r*'), hold off
+        hold on,quiver3 (p0(:,3),p0(:,2),p0(:,1),k(:,3)*abs(illumParam.P0(3)),k(:,2)*abs(illumParam.P0(3)),k(:,1)*abs(illumParam.P0(3)),'ShowArrowHead','off','AutoScale','off')
+        plot3 (p0(:,3),p0(:,2),p0(:,1),'r*'), hold off
     end
 end
 
@@ -122,11 +122,11 @@ dxs = xs(2)-xs(1);                                                          % de
 
 [xs, ys] = meshgrid(xs, xs);                                           % grid creation
 
-zs = cell(1,length(Layer));                                            % interpolated z coordinate per layer/cape 
-Normal = cell(1,length(Layer));                                    % cell with and array of normal vector for different positions in the nodes cloud
-for l = 1:length(Layer)
-    [zs{l}] = griddata(x(Layer{l}),y(Layer{l}),z(Layer{l}),xs,ys);  % Interpolate surfaces for discrete derivative
-    [Normal{l}] = NormalDir (zs{l}, dxs);                       % Calculate normal on every pixel of the interpolated surface
+zs = cell(1,length(layer));                                            % interpolated z coordinate per layer/cape 
+normal = cell(1,length(layer));                                    % cell with and array of normal vector for different positions in the nodes cloud
+for l = 1:length(layer)
+    [zs{l}] = griddata(x(layer{l}),y(layer{l}),z(layer{l}),xs,ys);  % Interpolate surfaces for discrete derivative
+    [normal{l}] = NormalDir (zs{l}, dxs);                       % Calculate normal on every pixel of the interpolated surface
 end
 clear zs
 %% Ray tracing
@@ -134,42 +134,39 @@ clear zs
 [ke1,ke2] = BeamAxes(k', [cosd(thetaref) sind(thetaref) 0]');         % Find polarization axes, based on a linear polarization reference. ke2 is the reference
 beamLocNode = zeros(size(k));                % beam location on node
 kRefracted = zeros(size(k))';                   % wave vector of refracted beams
-beamLoc = cell(1, length(Layer)+1);          % beam location coordinate
-beamLoc{1} = P0;
-kBeam = cell(1, length(Layer)+1);             % wave vector of light in each layer
+beamLoc = cell(1, length(layer)+1);          % beam location coordinate
+beamLoc{1} = p0;
+kBeam = cell(1, length(layer)+1);             % wave vector of light in each layer
 kBeam{1} = k';
 dn = ones(size(k'));                                % index of refraction in nodes per iteration
-dnBeam = cell(1,length(Layer)+2);               % index of refraction in nodes
+dnBeam = cell(1,length(layer)+2);               % index of refraction in nodes
 dnBeam{1} = dn; dnBeam{end} = dn;
-beamEllipCoor = cell(length(Layer), length(k));  % Beam direction in ellipsoid coordinate system
-nBeam = cell(length(Layer), length(k));             % Index of refraction for a direction of propagation
-nBeamDir = cell(length(Layer), length(k));         % Modes of propagation 
-globalDCoor = cell(length(Layer), length(k));     % Modes of propagation of D in the global coordinate system
-birefringence = cell(1, length(Layer));                % Birefringence
-axesRot = cell(1, length(Layer));                         % Axes of rotation of the optical axes
+beamEllipCoor = cell(length(layer), length(k));  % Beam direction in ellipsoid coordinate system
+nBeam = cell(length(layer), length(k));             % Index of refraction for a direction of propagation
+nBeamDir = cell(length(layer), length(k));         % Modes of propagation 
+globalDCoor = cell(length(layer), length(k));     % Modes of propagation of D in the global coordinate system
+birefringence = cell(1, length(layer));                % Birefringence
+axesRot = cell(1, length(layer));                         % Axes of rotation of the optical axes
 retardanceJonesMatrix = cell(1, length(k));       % Jones matrices
 
-for c = 1:length(Layer)                                        % iteration per layer
+for c = 1:length(layer)                                        % iteration per layer
     fprintf('Ray tracing in layer %u\n',c)
-    Strains = cell(1,6);
+    strains = cell(1,6);
     for w=1:6                                                        % Stress tensor
-    [Strains{w}] = griddata(x(Layer{c}),y(Layer{c}),Data(Layer{c},4+w),xs,ys);  % Interpolates components of the stress tensor
+    [strains{w}] = griddata(x(layer{c}),y(layer{c}),data(layer{c},4+w),xs,ys);  % Interpolates components of the stress tensor
     end
 for l = 1: length(k)                                               % iteration per ray
     % Find the ray intersection with the following surface
-    [beamLocNode(l,:)] =RayPos(x(Layer{c}), y(Layer{c}), z(Layer{c}), beamLoc{c}(l,:), kBeam{c}(:,l));
+    [beamLocNode(l,:)] =RayPos(x(layer{c}), y(layer{c}), z(layer{c}), beamLoc{c}(l,:), kBeam{c}(:,l));
     [~,CP2B] = sort(sqrt(sum(([xs(:), ys(:)]-beamLocNode(l,1:2)).^2,2))); % CP2B : Closest Point to Beam
-    Normal2P = Normal{c}(:,CP2B(1));
+    normal2P = normal{c}(:,CP2B(1));
     % Calculates index tensor magnitude and principal directions
-    if l==1739
-        a=0;
-    end
-    [dn(:,l), StressVD] = StressBir (Strains, beamLocNode(l,1:2), xs(CP2B(1:4)), ys(CP2B(1:4)), CP2B(1:4), OSC, n0);
+    [dn(:,l), StressVD] = StressBir (strains, beamLocNode(l,1:2), xs(CP2B(1:4)), ys(CP2B(1:4)), CP2B(1:4), OSC, n0);
     % incident and transmitted refractive indices, according to the model surfaces.
     if c==1         % The element is in air
         ni = 1;                                         % index of refraction incident medium
         nt = mean(dn(:,l));                      % index of refraction transmited medium
-    elseif c==length(Layer)   % The element is in air
+    elseif c==length(layer)   % The element is in air
         ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
         nt = 1;
     else                                 % Average refractive index
@@ -177,7 +174,7 @@ for l = 1: length(k)                                               % iteration p
         nt = mean(dn(:,l));
     end
     % Calculate refracted direction
-    [kRefracted(:,l)] = SnellCalc (kBeam{c}(:,l), Normal2P, ni, nt);   
+    [kRefracted(:,l)] = SnellCalc (kBeam{c}(:,l), normal2P, ni, nt);   
     % Rotate index ellipsoid and wavevector to a local CS defined by index axes
     [beamEllipCoor{c,l}, Srot, Norder] = SetLocalCord(StressVD(4:6)',StressVD(7:9)',StressVD(10:12)', kRefracted(:,l), ke1(:,l), ke2(:,l));
     % Calculates ray eigenvalues and eigenvetors 
@@ -198,9 +195,9 @@ fprintf('Jones calculation\n')
 
 for l = 1: length(k)
     Jm = eye(2);
-    for c=1:length(Layer)-1
-        BirL = (birefringence{c}(l)+birefringence{c+1}(l))/2;       % Average retardance between surfaces
-        [Jml] = TwistedBirElem(beamLoc{c+1}(l,:),beamLoc{c+2}(l,:), BirL, lambda, axesRot{c}(l,:),axesRot{c+1}(l,:));
+    for c=1:length(layer)-1
+        birL = (birefringence{c}(l)+birefringence{c+1}(l))/2;       % Average retardance between surfaces
+        [Jml] = TwistedBirElem(beamLoc{c+1}(l,:),beamLoc{c+2}(l,:), birL, lambda, axesRot{c}(l,:),axesRot{c+1}(l,:));
         Jm = Jml*Jm;                % Acumulative retardance effect
     end
     retardanceJonesMatrix{l} = Jm;
@@ -213,19 +210,19 @@ diattMatrix = cell (length(k),2);   % Diattenuation matrix per ray
 diattMag = zeros(length(k),2);    % Diattenuation magnitude
 diattAxis = zeros(length(k),2);    % Orientation of transmitance planes
 
-for c=[1, length(Layer)]
+for c=[1, length(layer)]
     beamLocNode = beamLoc{c+1};
     for l = 1: length(k)
         [~,CP2B] = sort(sum(abs([xs(:), ys(:)]-beamLocNode(l,1:2)),2)); % CP2B : Closest Point to Beam
-        Normal2P = Normal{c}(:,CP2B(1));
+        normal2P = normal{c}(:,CP2B(1));
         if c==1                                 % Calculation on first surface
             ni = 1;
             nt = mean(dn(:,l));
-            [diattMatrix{l,1},diattAxis(l,1),diattMag(l,1)] = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
-        elseif c==length(Layer)        % Calculation on last surface
+            [diattMatrix{l,1},diattAxis(l,1),diattMag(l,1)] = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
+        elseif c==length(layer)        % Calculation on last surface
             ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
             nt = 1;
-            diattMatrix{l,2} = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), Normal2P, ni, nt, thetaref);
+            diattMatrix{l,2} = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
         end
     end
 end
@@ -236,8 +233,8 @@ end
 %% Wave front error calculation
 
 OPL = zeros(1,length(k));           % optical path length
-WF = cell(2,length(Layer)-1);      % Wavefront
-for c=1:length(Layer)-1
+WF = cell(2,length(layer)-1);      % Wavefront
+for c=1:length(layer)-1
     for l = 1: length(k)
          if c==1                            % first propagation form source to element does not have birefringence
              n1=0; n2=0;

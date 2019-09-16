@@ -1,4 +1,9 @@
 /post1
+! This file save data obtained from an static mechanical analysis.
+! Data is saved in a txt file where rows indicate node index and columns have the following information
+! Node index, node x-position, node y-position, node y-position, x normal-stress, y normal-stress, z normal-stress, xy shear-stress, yz shear-stress, zx shear-stress
+! node displacement x, node displacement y, node displacement z, principal-stress 1, principal-stress 2, principal-stress 3
+
 *CFOPEN,Lens25,txt						
 csys,4
 rsys,4
@@ -6,7 +11,7 @@ dsys,4
 *get,nummin,node,,num,min
 *get,cont,node,,count
 nest=1-nummin
- 
+
 *do,i,1,cont+1
 *get,posx,node,nest,loc,x
 *get,posy,node,nest,loc,y
@@ -30,4 +35,3 @@ nest=nxt
  
 *enddo
 *CFCLOSE
-!*CFCLOSE

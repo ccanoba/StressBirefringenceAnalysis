@@ -1,9 +1,13 @@
 /prep7
 
-Rad1=100e-3		! Radio de curvatura primera superficie
-Rad2=-150e-3		! Radio de curvatura segunda superficie
-dLens=4e-3			! Espesor central de la lente
-Aper=12.5e-3		! Radio de apertura de la lente
+! Lens geometrical parameters
+
+Rad1=100e-3		! First surface radius of curvature
+Rad2=-150e-3		! Second surface radius of curvature
+dLens=4e-3			! Center thickness of the lens
+Aper=12.5e-3		! Lens aperture radius
+
+! Define keypoints for cross section
 
 CenterPos1=dLens/2-Rad1
 CenterPos2=-dLens/2-Rad2
@@ -21,7 +25,7 @@ k,,0,Aper,EdgeP2
 k,,0,Aper/2,EdgeP22
 
 
-! Visualizacion
+! Cross section visualization
 /VIEW,1,1   
 /ANG,1  
 /REP,FAST  
@@ -31,32 +35,37 @@ LARC,4,5,6
 L,1,4
 L,2,5
 
-! Define divisiones en la lente para le mallado
+! Define lens divisions for mesh
 
-LESIZE,1, , ,20, , , , ,1 						! 40
-LESIZE,2, , ,20, , , , ,1 						! 40
-LESIZE,3, , ,6, , , , ,1 						! 8
-LESIZE,4, , ,6, , , , ,1 						! 8
+RadDiv=20						! Radial divisions
+thickDiv=6 						! Thickness divisions
+
+LESIZE,1, , ,20, , , , ,1 		
+LESIZE,2, , ,20, , , , ,1 		
+LESIZE,3, , ,6, , , , ,1 		
+LESIZE,4, , ,6, , , , ,1 
+
+! Create volume with revolution
 
 AL,1,2,3,4
 VROTAT,1,,,,,,1,4,360,6, 
 
 
-E_x = 82e9        	!modulo de elasticidad inventado
-Nu_xy = 0.206		!modulo de poisson inventado
-Alfa = 8.3e-6		!CET inventado
-K_xx = 0.858		!Coef de conduct termica inventado
-T_ref = 293		!Temperatura de referencia  inventado
+E_x = 82e9        	!Modulus of elasticity 
+Nu_xy = 0.206		!Poissons Ratio
+Alfa = 8.3e-6		!CET
+K_xx = 0.858		!Thermal conductivity 
+T_ref = 293			!Reference temperature
 
-MPTEMP,,,,,,,,  	!Propiedades de material
-MPTEMP,1,0  	!Inicializa tabla de propiedades del material 
-MPDATA,EX,1,,E_x		! Introduce parametro
+MPTEMP,,,,,,,,  	!Material properties
+MPTEMP,1,0  		Iinitializes material properties table
+MPDATA,EX,1,,E_x		! Define parameter
 MPDATA,PRXY,1,,Nu_xy
-UIMP,1,REFT,,,T_ref	! Introduce parametro de referencia
+UIMP,1,REFT,,,T_ref
 MPDATA,ALPX,1,,Alfa 
 MPDATA,KXX,1,,K_xx  
 
-ET,1,SOLID185
+ET,1,SOLID70		! Element to use
 
 ! Mesh
 

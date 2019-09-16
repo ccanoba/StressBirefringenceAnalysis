@@ -35,14 +35,14 @@ considerDiattenuation = 1;                  % 1 to calculate diattenuation on fr
 % Defines the model source, help SourceDefinition to identify parameters
 
 % Collimated spherical discretization
-% illumParam = SourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
+illumParam = SourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
 % Diverging spherical discretization
 % illumParam = SourceDefinition(1, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]); 
 % Collimated square discretization. Circular shape
-illumParam = SourceDefinition(6, 12e-3, 24e-3, 24e-3, 26, 26, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);  
+% illumParam = SourceDefinition(6, 12e-3, 24e-3, 24e-3, 26, 26, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);  
 
 % Ray tracing in stress birefringent component
-[retardanceJonesMatrix, Layer, beamLoc, kBeam, birefringence, axesRot, WF, diattData] = StressBirRayTracing(data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
+[retardanceJonesMatrix, layer, beamLoc, kBeam, birefringence, axesRot, WF, diattData] = StressBirRayTracing(data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity);
 
 % If diattenuation is calculated, it is multiplied by the retardance
 % considering that front surfaces effect is before retardance and rear
@@ -62,7 +62,7 @@ if verbosity == 1 && ismember(illumParam.illumCase, [1,2])
     In = [cosd(Intheta) sind(Intheta)]'; In=In/norm(In);    % Define linear polarization state using Intheta
     shift = [0 0];      % Used to introduce a global offset in the ellipses parameters
     eFactor = 1;        % Parameter used to proportionally increase the ellipticity
-    outLayer = length(Layer) ;
+    outLayer = length(layer) ;
     chiThreshold = pi/(2^7);    % Ellipticity angles below this value are considered linearly polarization states
     ellipsize = 3;      % Scales ellipse size for visualization
     arrowsize = 5;
@@ -70,10 +70,10 @@ if verbosity == 1 && ismember(illumParam.illumCase, [1,2])
     stepplotT = 1:3:illumParam.NTI;
     % vector with the indices of the rays that will be plotted
     stepplot = (reshape(repmat(stepplotR,length(stepplotT),1),length(stepplotR)*length(stepplotT),1)'-1)*illumParam.NTI+repmat(stepplotT,1,length(stepplotR));
-    PosFactor = 5000;   % Used to scale the coordinate of polarization ellipses
+    posFactor = 5000;   % Used to scale the coordinate of polarization ellipses
     Fnum = 26;      % Figure number
     
-    Jones_Ellipse_Plot(JonesMatrix,In,shift, eFactor, Fnum, beamLoc{outLayer}(:,1)*PosFactor, beamLoc{outLayer}(:,2)*PosFactor, chiThreshold, ellipsize, arrowsize, stepplot)
+    Jones_Ellipse_Plot(JonesMatrix,In,shift, eFactor, Fnum, beamLoc{outLayer}(:,1)*posFactor, beamLoc{outLayer}(:,2)*posFactor, chiThreshold, ellipsize, arrowsize, stepplot)
     hold off
     title('Polarization map')
 end
@@ -88,14 +88,14 @@ if verbosity == 1
     birefringenceMap = birefringence{1};
     birefringenceMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),birefringenceMap,xs,ys);
     figure,imagesc(rot90(birefringenceMap*-1,2)),colorbar, colormap ('plasma'), title('Front birefringence map'), colorbar
-    birefringenceMap = birefringence{length(Layer)};
-    birefringenceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),birefringenceMap,xs,ys);
+    birefringenceMap = birefringence{length(layer)};
+    birefringenceMap = griddata(beamLoc{length(layer)+1}(:,1),beamLoc{length(layer)+1}(:,2),birefringenceMap,xs,ys);
     figure,imagesc(rot90(birefringenceMap*-1,2)),colorbar, colormap ('plasma'), title('Rear birefringence map'), colorbar
     axesRotMap = axesRot{1};
     axesRotMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),axesRotMap,xs,ys);
     figure,imagesc(rot90(axesRotMap,2)),colorbar, colormap(flipud(cmap('c3','shift',0.25))), title('Front fast axis orientation map'), colorbar
-    axesRotMap = axesRot{length(Layer)};
-    axesRotMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),axesRotMap,xs,ys);
+    axesRotMap = axesRot{length(layer)};
+    axesRotMap = griddata(beamLoc{length(layer)+1}(:,1),beamLoc{length(layer)+1}(:,2),axesRotMap,xs,ys);
     figure,imagesc(rot90(axesRotMap,2)),colorbar, colormap(flipud(cmap('c3','shift',0.25))), title('Rear fast axis orientation map'), colorbar
 end
 
@@ -105,8 +105,8 @@ retardance = 2*acos(real(JM(1,1:2:end)));
 thetaEnd1 = imag(JM(2,1:2:end))./sin(retardance/2);
 thetaEnd2 = imag(JM(1,1:2:end))./sin(retardance/2);
 thetaEnd =-atan2d(thetaEnd1, -thetaEnd2)/2;
-retardanceMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),retardance',xs,ys);
-thetaEndMap = griddata(beamLoc{length(Layer)+1}(:,1),beamLoc{length(Layer)+1}(:,2),thetaEnd,xs,ys);
+retardanceMap = griddata(beamLoc{length(layer)+1}(:,1),beamLoc{length(layer)+1}(:,2),retardance',xs,ys);
+thetaEndMap = griddata(beamLoc{length(layer)+1}(:,1),beamLoc{length(layer)+1}(:,2),thetaEnd,xs,ys);
 
 if verbosity == 1
     figure,imagesc(rot90(WF{2,end},2)), colormap(colorcet('cbl1')), title('Stress birefringence wavefront error'), colorbar
