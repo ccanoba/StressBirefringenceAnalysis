@@ -19,7 +19,16 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [OPL] = waveFront(Pi, Pf, n1, n2) 
+% Authors:  Camilo Cano {1*}, Pablo Zuluaga-Ramírez {2}, René Restrepo {1,3}
+%   1. Applied Optics Group, Universidad EAFIT, Carrera 49 # 7 Sur-50,
+%   Medellín, Colombia.
+%   2. European Southern Observatory Headquarters, Karl-Schwarzschild-Str. 2, 
+%   85748 Garching bei Munchen, Germany
+%   3. Aerospace Optics Instrumentation Division, National Institute of Aerospace
+%   Technology - INTA, Ctra de Ajalvir, Km 4, Torrejon de Ardoz, 28850 Madrid, Spain
+%	* <ccanoba@eafit.edu.co>    -   2019
+
+function [OPL] = WaveFront(Pi, Pf, n1, n2) 
 
 L = sqrt((Pf(:,1)-Pi(:,1)).^2+(Pf(:,2)-Pi(:,2)).^2+(Pf(:,3)-Pi(:,3)).^2);   % Length of the medium
 OPL = L*(n1+n2)/(2);                % Average optical path length

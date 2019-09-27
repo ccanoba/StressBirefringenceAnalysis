@@ -8,6 +8,26 @@
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Authors:  Camilo Cano {1*}, Pablo Zuluaga-Ramírez {2}, René Restrepo {1,3}
+% CC - RR:
+%   1. Applied Optics Group, Universidad EAFIT, Carrera 49 # 7 Sur-50,
+%   Medellín, Colombia.
+%
+% PZR:
+%   2. European Southern Observatory Headquarters, Karl-Schwarzschild-Str. 2, 
+%   85748 Garching bei Munchen, Germany
+%
+% RR:
+%   3. Aerospace Optics Instrumentation Division, National Institute of Aerospace
+%   Technology - INTA, Ctra de Ajalvir, Km 4, Torrejon de Ardoz, 28850 Madrid, Spain
+%
+%	* <ccanoba@eafit.edu.co>
+%
+%   Version 1
+%
+% Copyright Camilo Cano (2019)
+
+%%
 % add path to functions
 addpath(genpath('..'))
 

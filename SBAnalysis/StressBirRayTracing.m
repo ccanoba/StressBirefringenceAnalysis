@@ -3,9 +3,9 @@
 % component, employing a ray tracing method. The user must provide
 % information regardaing the stresses distribution in the material and the
 % illumination comfiguration.
-% 
+%
 % Inputs :
-% 
+%
 % Data : Matrix with the information related to the stresses obtained via
 %           FEM analysis, the first dimension is the node number. The
 %           second dimension are the node index; nodes coordinates x,y,z;
@@ -24,9 +24,9 @@
 % considerDiattenuation : Whether to calculate diattenuation on interfaces
 %                                        (1) or not (2).
 % verbosity : If (1) plots layers discretization.
-% 
+%
 % Outputs :
-% 
+%
 % RetardanceJonesMatrix : Cell array with the retardance Jones matrix for
 %                                         every ray in the model.
 % Layer : Cell array with the index of every node that belongs to a surface
@@ -46,6 +46,25 @@
 %                  and diattenuation magnitude maps.
 % kBeam : Cell array with ray wayvector on every surface.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Authors:  Camilo Cano {1*}, Pablo Zuluaga-Ramírez {2}, René Restrepo {1,3}
+% CC - RR:
+%   1. Applied Optics Group, Universidad EAFIT, Carrera 49 # 7 Sur-50,
+%	Medellín, Colombia.
+%
+% PZR:
+%   2. European Southern Observatory Headquarters, Karl-Schwarzschild-Str. 2, 
+%   85748 Garching bei Munchen, Germany
+%
+% RR:
+%   3. Aerospace Optics Instrumentation Division, National Institute of Aerospace
+%   Technology - INTA, Ctra de Ajalvir, Km 4, Torrejon de Ardoz, 28850 Madrid, Spain
+%
+%	* <ccanoba@eafit.edu.co>
+%
+%   Version 1
+%
+% Copyright Camilo Cano (2019)
 
 function [retardanceJonesMatrix, layer, beamLoc, kBeam, birefringence, axesRot, WF, diattData] = StressBirRayTracing(data, n0, OSC, lambda, illumParam, Nsx, thetaref, solMethod, considerDiattenuation, verbosity)
 % Selection of nodes coordinates from FEM data
@@ -118,11 +137,11 @@ fprintf('Surfaces normals calculation\n')
 xs = max([abs(min(xu)), max(xu), abs(min(yu)), max(yu)]);                 % size of grid for interpolation
 
 xs = linspace(-xs, xs, Nsx);                                           % axis definition
-dxs = xs(2)-xs(1);                                                          % delta size in interpolation grid 
+dxs = xs(2)-xs(1);                                                          % delta size in interpolation grid
 
 [xs, ys] = meshgrid(xs, xs);                                           % grid creation
 
-zs = cell(1,length(layer));                                            % interpolated z coordinate per layer/cape 
+zs = cell(1,length(layer));                                            % interpolated z coordinate per layer/cape
 normal = cell(1,length(layer));                                    % cell with and array of normal vector for different positions in the nodes cloud
 for l = 1:length(layer)
     [zs{l}] = griddata(x(layer{l}),y(layer{l}),z(layer{l}),xs,ys);  % Interpolate surfaces for discrete derivative
@@ -143,7 +162,7 @@ dnBeam = cell(1,length(layer)+2);               % index of refraction in nodes
 dnBeam{1} = dn; dnBeam{end} = dn;
 beamEllipCoor = cell(length(layer), length(k));  % Beam direction in ellipsoid coordinate system
 nBeam = cell(length(layer), length(k));             % Index of refraction for a direction of propagation
-nBeamDir = cell(length(layer), length(k));         % Modes of propagation 
+nBeamDir = cell(length(layer), length(k));         % Modes of propagation
 globalDCoor = cell(length(layer), length(k));     % Modes of propagation of D in the global coordinate system
 birefringence = cell(1, length(layer));                % Birefringence
 axesRot = cell(1, length(layer));                         % Axes of rotation of the optical axes
@@ -153,41 +172,41 @@ for c = 1:length(layer)                                        % iteration per l
     fprintf('Ray tracing in layer %u\n',c)
     strains = cell(1,6);
     for w=1:6                                                        % Stress tensor
-    [strains{w}] = griddata(x(layer{c}),y(layer{c}),data(layer{c},4+w),xs,ys);  % Interpolates components of the stress tensor
+        [strains{w}] = griddata(x(layer{c}),y(layer{c}),data(layer{c},4+w),xs,ys);  % Interpolates components of the stress tensor
     end
-for l = 1: length(k)                                               % iteration per ray
-    % Find the ray intersection with the following surface
-    [beamLocNode(l,:)] =RayPos(x(layer{c}), y(layer{c}), z(layer{c}), beamLoc{c}(l,:), kBeam{c}(:,l));
-    [~,CP2B] = sort(sqrt(sum(([xs(:), ys(:)]-beamLocNode(l,1:2)).^2,2))); % CP2B : Closest Point to Beam
-    normal2P = normal{c}(:,CP2B(1));
-    % Calculates index tensor magnitude and principal directions
-    [dn(:,l), StressVD] = StressBir (strains, beamLocNode(l,1:2), xs(CP2B(1:4)), ys(CP2B(1:4)), CP2B(1:4), OSC, n0);
-    % incident and transmitted refractive indices, according to the model surfaces.
-    if c==1         % The element is in air
-        ni = 1;                                         % index of refraction incident medium
-        nt = mean(dn(:,l));                      % index of refraction transmited medium
-    elseif c==length(layer)   % The element is in air
-        ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
-        nt = 1;
-    else                                 % Average refractive index
-        ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
-        nt = mean(dn(:,l));
+    for l = 1: length(k)                                               % iteration per ray
+        % Find the ray intersection with the following surface
+        [beamLocNode(l,:)] =RayPos(x(layer{c}), y(layer{c}), z(layer{c}), beamLoc{c}(l,:), kBeam{c}(:,l));
+        [~,CP2B] = sort(sqrt(sum(([xs(:), ys(:)]-beamLocNode(l,1:2)).^2,2))); % CP2B : Closest Point to Beam
+        normal2P = normal{c}(:,CP2B(1));
+        % Calculates index tensor magnitude and principal directions
+        [dn(:,l), StressVD] = StressBir (strains, beamLocNode(l,1:2), xs(CP2B(1:4)), ys(CP2B(1:4)), CP2B(1:4), OSC, n0);
+        % incident and transmitted refractive indices, according to the model surfaces.
+        if c==1         % The element is in air
+            ni = 1;                                         % index of refraction incident medium
+            nt = mean(dn(:,l));                      % index of refraction transmited medium
+        elseif c==length(layer)   % The element is in air
+            ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+            nt = 1;
+        else                                 % Average refractive index
+            ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+            nt = mean(dn(:,l));
+        end
+        % Calculate refracted direction
+        [kRefracted(:,l)] = SnellCalc (kBeam{c}(:,l), normal2P, ni, nt);
+        % Rotate index ellipsoid and wavevector to a local CS defined by index axes
+        [beamEllipCoor{c,l}, Srot, Norder] = SetLocalCord(StressVD(4:6)',StressVD(7:9)',StressVD(10:12)', kRefracted(:,l), ke1(:,l), ke2(:,l));
+        % Calculates ray eigenvalues and eigenvetors
+        [nBeam{c,l}, nBeamDir{c,l}] = IndexEllipCalc(dn(Norder(2),l),dn(Norder(3),l),dn(Norder(1),l),beamEllipCoor{c,l}(:,4), solMethod);
+        % Returns light wavevector and electric field components to global CS
+        [globalDCoor{c,l}] = Back2GCS([nBeamDir{c,l}], Srot);
     end
-    % Calculate refracted direction
-    [kRefracted(:,l)] = SnellCalc (kBeam{c}(:,l), normal2P, ni, nt);   
-    % Rotate index ellipsoid and wavevector to a local CS defined by index axes
-    [beamEllipCoor{c,l}, Srot, Norder] = SetLocalCord(StressVD(4:6)',StressVD(7:9)',StressVD(10:12)', kRefracted(:,l), ke1(:,l), ke2(:,l));
-    % Calculates ray eigenvalues and eigenvetors 
-    [nBeam{c,l}, nBeamDir{c,l}] = IndexEllipCalc(dn(Norder(2),l),dn(Norder(3),l),dn(Norder(1),l),beamEllipCoor{c,l}(:,4), solMethod);
-    % Returns light wavevector and electric field components to global CS
-    [globalDCoor{c,l}] = Back2GCS([nBeamDir{c,l}], Srot);
-end
-clear Strains
-% Store relevant parameters in cell
-beamLoc{c+1} = beamLocNode;
-kBeam{c+1} = kRefracted;
-dnBeam{c+1} = dn;
-[birefringence{c}, axesRot{c}] = JonesMatrixParam(nBeam(c,:), globalDCoor(c,:), kBeam{c+1}, thetaref);
+    clear Strains
+    % Store relevant parameters in cell
+    beamLoc{c+1} = beamLocNode;
+    kBeam{c+1} = kRefracted;
+    dnBeam{c+1} = dn;
+    [birefringence{c}, axesRot{c}] = JonesMatrixParam(nBeam(c,:), globalDCoor(c,:), kBeam{c+1}, thetaref);
 end
 
 %% Calculation of retardance Jones matrices, assuming twisted nematic behaviour of the medium
@@ -206,29 +225,29 @@ end
 
 diattData = {};
 if considerDiattenuation == 1
-diattMatrix = cell (length(k),2);   % Diattenuation matrix per ray
-diattMag = zeros(length(k),2);    % Diattenuation magnitude
-diattAxis = zeros(length(k),2);    % Orientation of transmitance planes
-
-for c=[1, length(layer)]
-    beamLocNode = beamLoc{c+1};
-    for l = 1: length(k)
-        [~,CP2B] = sort(sum(abs([xs(:), ys(:)]-beamLocNode(l,1:2)),2)); % CP2B : Closest Point to Beam
-        normal2P = normal{c}(:,CP2B(1));
-        if c==1                                 % Calculation on first surface
-            ni = 1;
-            nt = mean(dn(:,l));
-            [diattMatrix{l,1},diattAxis(l,1),diattMag(l,1)] = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
-        elseif c==length(layer)        % Calculation on last surface
-            ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
-            nt = 1;
-            diattMatrix{l,2} = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
+    diattMatrix = cell (length(k),2);   % Diattenuation matrix per ray
+    diattMag = zeros(length(k),2);    % Diattenuation magnitude
+    diattAxis = zeros(length(k),2);    % Orientation of transmitance planes
+    
+    for c=[1, length(layer)]
+        beamLocNode = beamLoc{c+1};
+        for l = 1: length(k)
+            [~,CP2B] = sort(sum(abs([xs(:), ys(:)]-beamLocNode(l,1:2)),2)); % CP2B : Closest Point to Beam
+            normal2P = normal{c}(:,CP2B(1));
+            if c==1                                 % Calculation on first surface
+                ni = 1;
+                nt = mean(dn(:,l));
+                [diattMatrix{l,1},diattAxis(l,1),diattMag(l,1)] = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
+            elseif c==length(layer)        % Calculation on last surface
+                ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
+                nt = 1;
+                diattMatrix{l,2} = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
+            end
         end
     end
-end
-diattAxisMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattAxis(:,1),xs,ys);
-diattMagMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattMag(:,1),xs,ys);
-diattData = {diattMatrix, diattAxisMap, diattMagMap};
+    diattAxisMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattAxis(:,1),xs,ys);
+    diattMagMap = griddata(beamLoc{2}(:,1),beamLoc{2}(:,2),diattMag(:,1),xs,ys);
+    diattData = {diattMatrix, diattAxisMap, diattMagMap};
 end
 %% Wave front error calculation
 
@@ -236,12 +255,12 @@ OPL = zeros(1,length(k));           % optical path length
 WF = cell(2,length(layer)-1);      % Wavefront
 for c=1:length(layer)-1
     for l = 1: length(k)
-         if c==1                            % first propagation form source to element does not have birefringence
-             n1=0; n2=0;
-         else
-             % Subtract non stress-induced wavefront error
-             n1 = ((nBeam{c-1,l}(1)+nBeam{c,l}(1))/2)-n0;
-             n2 = ((nBeam{c-1,l}(2)+nBeam{c,l}(2))/2)-n0;
+        if c==1                            % first propagation form source to element does not have birefringence
+            n1=0; n2=0;
+        else
+            % Subtract non stress-induced wavefront error
+            n1 = ((nBeam{c-1,l}(1)+nBeam{c,l}(1))/2)-n0;
+            n2 = ((nBeam{c-1,l}(2)+nBeam{c,l}(2))/2)-n0;
         end
         OPL(l) = WaveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
     end
@@ -251,4 +270,5 @@ for c=1:length(layer)-1
         WF{1,c} = WF{1,c-1}+OPL;    % Wavefront error is additive
     end
     WF{2,c} = griddata(beamLoc{c+1}(:,1),beamLoc{c+1}(:,2),WF{1,c},xs,ys);
+end
 end

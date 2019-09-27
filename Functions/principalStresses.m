@@ -1,4 +1,4 @@
-function [principalStressDirection, principalStressValues]=principalStresses(stressTensor)
+function [principalStressDirection, principalStressValues]=PrincipalStresses(stressTensor)
 %principalStresses function returns the principal stress and their
 %directions using eigen function
 %
