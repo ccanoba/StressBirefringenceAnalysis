@@ -8,10 +8,10 @@
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Authors:  Camilo Cano {1*}, Pablo Zuluaga-Ramírez {2}, René Restrepo {1,3}
+% Authors:  Camilo Cano {1*}, Pablo Zuluaga-Ramï¿½rez {2}, Renï¿½ Restrepo {1,3}
 % CC - RR:
 %   1. Applied Optics Group, Universidad EAFIT, Carrera 49 # 7 Sur-50,
-%   Medellín, Colombia.
+%   Medellï¿½n, Colombia.
 %
 % PZR:
 %   2. European Southern Observatory Headquarters, Karl-Schwarzschild-Str. 2, 
@@ -55,7 +55,7 @@ considerDiattenuation = 1;                  % 1 to calculate diattenuation on fr
 % Defines the model source, help SourceDefinition to identify parameters
 
 % Collimated spherical discretization
-illumParam = SourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
+illumParam = sourceDefinition(2, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]);   
 % Diverging spherical discretization
 % illumParam = SourceDefinition(1, 12e-3, 25, 36*2, [0 0 -200e-3], [min(x), max(x), min(y), max(y), min(z), max(z)]); 
 % Collimated square discretization. Circular shape

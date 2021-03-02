@@ -1,4 +1,4 @@
-function [principalStressDirection, principalStressValues]=PrincipalStresses(stressTensor)
+function [principalStressDirection, principalStressValues]=principalStresses(stressTensor)
 %principalStresses function returns the principal stress and their
 %directions using eigen function
 %
@@ -8,9 +8,9 @@ function [principalStressDirection, principalStressValues]=PrincipalStresses(str
 %      principalStressValues, matrix with the directions of the principal
 %      stresses
 %
-% Authors: René Restrepo, Pablo Zuluaga y Javier Hernandez
+% Authors: Renï¿½ Restrepo, Pablo Zuluaga y Javier Hernandez
 % Grupo de optica Aplicada (Universidad EAFIT)
-% Laboratorio de Instrumentación Espacial (INTA)
+% Laboratorio de Instrumentaciï¿½n Espacial (INTA)
 
 %% Information about principal stresses organized
 [directions,values]=eig(stressTensor);

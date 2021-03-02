@@ -19,9 +19,9 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Authors:  Camilo Cano {1*}, Pablo Zuluaga-Ramírez {2}, René Restrepo {1,3}
+% Authors:  Camilo Cano {1*}, Pablo Zuluaga-Ramï¿½rez {2}, Renï¿½ Restrepo {1,3}
 %   1. Applied Optics Group, Universidad EAFIT, Carrera 49 # 7 Sur-50,
-%   Medellín, Colombia.
+%   Medellï¿½n, Colombia.
 %   2. European Southern Observatory Headquarters, Karl-Schwarzschild-Str. 2, 
 %   85748 Garching bei Munchen, Germany
 %   3. Aerospace Optics Instrumentation Division, National Institute of Aerospace
@@ -45,7 +45,7 @@ stressTensor = [StressT(1), StressT(4), StressT(6);...
                           StressT(6), StressT(5), StressT(3)];
                       
 % Diagonalization of the stress tensor                      
-[PSD, PSV]=PrincipalStresses(stressTensor);
+[PSD, PSV]=principalStresses(stressTensor);
 
 StressVD(1:3) = PSV([1,5,9]);
 StressVD(4:12) = PSD(1:9); 

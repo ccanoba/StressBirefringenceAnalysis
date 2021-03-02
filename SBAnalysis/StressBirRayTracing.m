@@ -47,10 +47,10 @@
 % kBeam : Cell array with ray wayvector on every surface.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Authors:  Camilo Cano {1*}, Pablo Zuluaga-Ramírez {2}, René Restrepo {1,3}
+% Authors:  Camilo Cano {1*}, Pablo Zuluaga-Ramï¿½rez {2}, Renï¿½ Restrepo {1,3}
 % CC - RR:
 %   1. Applied Optics Group, Universidad EAFIT, Carrera 49 # 7 Sur-50,
-%	Medellín, Colombia.
+%	Medellï¿½n, Colombia.
 %
 % PZR:
 %   2. European Southern Observatory Headquarters, Karl-Schwarzschild-Str. 2, 
@@ -237,11 +237,11 @@ if considerDiattenuation == 1
             if c==1                                 % Calculation on first surface
                 ni = 1;
                 nt = mean(dn(:,l));
-                [diattMatrix{l,1},diattAxis(l,1),diattMag(l,1)] = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
+                [diattMatrix{l,1},diattAxis(l,1),diattMag(l,1)] = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
             elseif c==length(layer)        % Calculation on last surface
                 ni = (mean(dnBeam{c}(:,l))+2*mean(dn(:,l)))/3;
                 nt = 1;
-                diattMatrix{l,2} = DiattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
+                diattMatrix{l,2} = diattenuationCalc(kBeam{c}(:,l), kBeam{c+1}(:,l), normal2P, ni, nt, thetaref);
             end
         end
     end
@@ -262,7 +262,7 @@ for c=1:length(layer)-1
             n1 = ((nBeam{c-1,l}(1)+nBeam{c,l}(1))/2)-n0;
             n2 = ((nBeam{c-1,l}(2)+nBeam{c,l}(2))/2)-n0;
         end
-        OPL(l) = WaveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
+        OPL(l) = waveFront(beamLoc{c}(l,:),beamLoc{c+1}(l,:),n1,n2);
     end
     if c==1
         WF{1,c} = OPL;      % Initialize wavefront
